@@ -13,7 +13,7 @@ class BNInception(nn.Module):
         if gen_vis or save_feats:
             model_path = model_path.replace('.yaml', '_vis.yaml')
             strict_load = False
-        manifest = yaml.load(open(model_path))
+        manifest = yaml.safe_load(open(model_path))
 
         layers = manifest['layers']
 
@@ -74,7 +74,7 @@ class BNInception_gsf(nn.Module):
                  num_segments=8, gsf_ch_ratio=100):
         super(BNInception_gsf, self).__init__()
 
-        manifest = yaml.load(open(model_path))
+        manifest = yaml.safe_load(open(model_path))
 
         layers = manifest['layers']
 

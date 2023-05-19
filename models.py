@@ -3,7 +3,7 @@ from ops.basic_ops import ConsensusModule
 from utils.transforms import *
 from torch.nn.init import normal_, constant_
 from scipy.ndimage import zoom
-import cv2
+#import cv2
 import os, sys
 from torch.cuda import amp
 

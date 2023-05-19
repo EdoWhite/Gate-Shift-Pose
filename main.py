@@ -4,6 +4,7 @@ import time
 import shutil
 import torch.multiprocessing as mp
 import torch.nn.parallel
+import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torch.optim
 from torch.nn.utils import clip_grad_norm_
@@ -51,6 +52,11 @@ def main():
         num_class = 400
         args.rgb_prefix = 'img_'
         rgb_read_format = "{:05d}.jpg"
+    # skate dataset
+    elif args.dataset == 'skate':
+        num_class = 4
+        args.rgb_prefix = 'frame'
+        rgb_read_format = "{:06d}.jpg"
     else:
         raise ValueError('Unknown dataset '+args.dataset)
 
@@ -92,7 +98,24 @@ def main():
                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
                        target_transform=target_transforms)
+    
+    # FEATURE EXTRACTOR MODE
+    if args.feature_extractor is not None:
+        # lead pretrained weights
+        checkpoint = torch.load(args.feature_extractor)
 
+        base_dict = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint['model_state_dict'].items())}
+        model.load_state_dict(base_dict, strict=True)
+
+        # freeze layers
+        for param in model.parameters():
+            param.requires_grad = False
+
+        # set num features of last layer
+        num_ftrs = model.new_fc.in_features
+        model.new_fc = nn.Linear(num_ftrs, num_class)
+    # END
+    
     crop_size = model.crop_size
     scale_size = model.scale_size
     input_mean = model.input_mean
