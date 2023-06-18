@@ -94,7 +94,7 @@ elif args.dataset == 'kinetics400':
 else:
     raise ValueError('Unknown dataset '+args.dataset)
 
-
+# Load the base model
 net = VideoModel(num_class=num_class, num_segments=args.test_segments, base_model=args.arch,
                  consensus_type=args.crop_fusion_type, gsf=args.gsf, gsf_ch_ratio = args.gsf_ch_ratio,
                  )
@@ -131,6 +131,7 @@ elif args.test_crops == 5:
 else:
     raise ValueError("Unsupported number of test crops: {}".format(args.test_crops))
 
+# Load the dataset
 data_loader = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.val_list, num_segments=args.test_segments,
                                                        image_tmpl=args.rgb_prefix+rgb_read_format, test_mode=True,
                                                        transform=torchvision.transforms.Compose([cropping,

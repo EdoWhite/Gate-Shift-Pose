@@ -94,6 +94,7 @@ def main():
         [args.dataset, args.arch, 'segment%d' % args.num_segments])
     print('storing name: ' + args.store_name)
 
+    # Load the base model
     model = VideoModel(num_class=num_class, num_segments=args.num_segments,
                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
@@ -173,6 +174,7 @@ def main():
                      transform=train_transform),
         batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True)
+    
     val_loader = torch.utils.data.DataLoader(
         VideoDataset(args.root_path, args.val_list, num_segments=args.num_segments,
                      image_tmpl=args.rgb_prefix+rgb_read_format,
