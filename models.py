@@ -143,7 +143,8 @@ class VideoModel(nn.Module):
             elif isinstance(m, torch.nn.BatchNorm2d) or isinstance(m, torch.nn.BatchNorm3d):
                 bn_cnt += 1
                 # later BN's are frozen
-                if not self._enable_pbn or bn_cnt == 1:
+                #if not self._enable_pbn or bn_cnt == 1:
+                if bn_cnt == 1:
                     bn.extend(list(m.parameters()))
             elif len(m._modules) == 0:
                 if len(list(m.parameters())) > 0:

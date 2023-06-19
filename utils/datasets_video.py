@@ -4,7 +4,7 @@ import torchvision
 import torchvision.datasets as datasets
 
 
-ROOT_DATASET = './data'
+ROOT_DATASET = './dataset'
 
 
 def return_something_v1(split):

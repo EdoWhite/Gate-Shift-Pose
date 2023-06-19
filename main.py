@@ -66,6 +66,11 @@ def main():
     os.makedirs(model_dir)
     os.makedirs(os.path.join(model_dir, args.root_log))
 
+    ##
+    args.gsf_ch_fusion=-1
+    args.gsf_temp_kern=-1
+    ##
+
     note_fl = open(model_dir + '/note.txt', 'a')
     note_fl.write('GSF:                   {}\n'
                   'Fusion:                {}\n'
@@ -101,7 +106,7 @@ def main():
                        target_transform=target_transforms)
     
     # FEATURE EXTRACTOR MODE
-    if args.feature_extractor is not None:
+    if args.feature_extractor == True:
         # lead pretrained weights
         checkpoint = torch.load(args.feature_extractor)
 
