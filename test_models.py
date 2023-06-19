@@ -79,14 +79,17 @@ if args.dataset == 'something-v1':
     num_class = 174
     args.rgb_prefix = ''
     rgb_read_format = "{:05d}.jpg"
+
 elif args.dataset == 'something-v2':
     num_class = 174
     args.rgb_prefix = ''
     rgb_read_format = "{:06d}.jpg"
+
 elif args.dataset == 'diving48':
     num_class = 48
-    args.rgb_prefix = 'frame'
-    rgb_read_format = "{:06d}.jpg"
+    args.rgb_prefix = 'frames'
+    rgb_read_format = "{:05d}.jpg"
+
 elif args.dataset == 'kinetics400':
     num_class = 400
     args.rgb_prefix = 'img_{:05d}.jpg'

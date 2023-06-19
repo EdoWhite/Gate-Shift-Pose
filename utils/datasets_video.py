@@ -27,7 +27,7 @@ def return_diving48(split):
     root_data = 'Diving48/frames'
     filename_imglist_train = 'Diving48/train_videofolder.txt'
     filename_imglist_val = 'Diving48/val_videofolder.txt'
-    prefix = 'frame{:06d}.jpg'
+    prefix = 'frames{:06d}.jpg'
 
     return filename_imglist_train, filename_imglist_val, root_data, prefix
     
