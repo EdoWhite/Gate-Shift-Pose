@@ -144,8 +144,7 @@ class VideoModel(nn.Module):
                 bn_cnt += 1
                 # later BN's are frozen
                 #if not self._enable_pbn or bn_cnt == 1:
-                if bn_cnt == 1:
-                    bn.extend(list(m.parameters()))
+                bn.extend(list(m.parameters()))
             elif len(m._modules) == 0:
                 if len(list(m.parameters())) > 0:
                     raise ValueError("New atomic module type: {}. Need to give it a learning policy".format(type(m)))

@@ -70,7 +70,7 @@ def main():
     os.makedirs(model_dir)
     os.makedirs(os.path.join(model_dir, args.root_log))
 
-    ##
+    ## NOT NEEDED according to the author
     args.gsf_ch_fusion=-1
     args.gsf_temp_kern=-1
     ##
@@ -207,6 +207,8 @@ def main():
         raise ValueError("Unknown loss type")
 
     log_training = open(os.path.join(model_dir, args.root_log, '%s.csv' % args.store_name), 'a')
+
+    # Evaluate the model on Validation Set
     if args.evaluate:
         validate(val_loader, model, criterion, iter=0, epoch=args.start_epoch,
                  log=log_training, writer=writer)
