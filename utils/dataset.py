@@ -48,6 +48,12 @@ class VideoRecord(object):
         else:
             return 0
 
+"""
+All datasets that represent a map from keys to data samples should subclass it. 
+All subclasses should overwrite __getitem__(), supporting fetching a data sample for a given key. 
+Subclasses could also optionally overwrite __len__(), which is expected to return the size of 
+the dataset by many Sampler implementations and the default options of DataLoader.
+"""
 
 class VideoDataset(data.Dataset):
     def __init__(self, root_path, list_file,
@@ -81,6 +87,7 @@ class VideoDataset(data.Dataset):
 
         self._parse_list()
 
+
     def _load_image(self, directory, idx):
         try:
             return [
@@ -89,8 +96,10 @@ class VideoDataset(data.Dataset):
             print('error loading image:', os.path.join(self.root_path, directory, self.image_tmpl.format(idx)))
             return [Image.open(os.path.join(self.root_path, directory, self.image_tmpl.format(1))).convert('RGB')]
 
+
     def _load_from_video(self, path, frame_ids):
         return 0
+
 
     def _parse_list(self):
         # check the frame number is large >3:
@@ -111,6 +120,7 @@ class VideoDataset(data.Dataset):
                 len_gulp += len(dict)
             assert len_gulp == len(self.video_list), f"No. of samples is different {self.list_file}({len(self.video_list)}) | {os.path.join(self.root_path, mode)}({len_gulp})"
         print('video number:%d'%(len(self.video_list)))
+
 
     def _sample_indices(self, record=None, num_frames=None):
         """
@@ -139,6 +149,7 @@ class VideoDataset(data.Dataset):
                 # offsets = np.concatenate(
                 #     [np.arange(num_frames), np.ones(self.num_segments - num_frames) * (num_frames - 1)], axis=-1)
         return offsets
+    
 
     def _sample_indices_dense(self, record):
         sample_pos = max(1, 1 + record.num_frames - 64)
@@ -146,6 +157,7 @@ class VideoDataset(data.Dataset):
         start_idx = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
         offsets = [(idx * t_stride + start_idx) % record.num_frames for idx in range(self.num_segments)]
         return np.array(offsets) + 1
+
 
     def _sample_indices_video(self, record):
 
@@ -186,6 +198,7 @@ class VideoDataset(data.Dataset):
             return offsets + 1
         return np.array(offsets) + 1
 
+
     def _get_val_indices(self, record=None, num_frames=None):
         if self.dense_sample:  # i3d dense sample
             sample_pos = max(1, 1 + record.num_frames - 64)
@@ -208,12 +221,14 @@ class VideoDataset(data.Dataset):
                 #     [np.arange(num_frames), np.ones(self.num_segments - num_frames) * (num_frames - 1)], axis=-1)
         return offsets
 
+
     def _get_val_indices_dense(self, record):
         sample_pos = max(1, 1 + record.num_frames - 64)
         t_stride = 64 // self.num_segments
         start_idx = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
         offsets = [(idx * t_stride + start_idx) % record.num_frames for idx in range(self.num_segments)]
         return np.array(offsets) + 1
+
 
     def _get_val_indices_video(self, record):
         num_frames = record.num_frames
@@ -240,6 +255,7 @@ class VideoDataset(data.Dataset):
             offsets = offsets + 1
             offsets = list(offsets)
         return np.array(offsets) + 1
+
 
     def _get_test_indices(self, record):
         if self.dense_sample:
@@ -275,6 +291,7 @@ class VideoDataset(data.Dataset):
                 offsets_clips.append(offsets+1)
             offsets = offsets_clips
         return offsets
+    
 
     def _get_test_indices_dense(self, record):
         sample_pos = max(1, 1 + record.num_frames - 64)
@@ -285,8 +302,8 @@ class VideoDataset(data.Dataset):
             offsets += [(idx * t_stride + start_idx) % record.num_frames for idx in range(self.num_segments)]
         return np.array(offsets) + 1
 
+
     def _get_test_indices_video(self, record):
-        
             num_frames = record.num_frames
             if not self.sparse_sampling:
                 num_frames = num_frames - 1
@@ -335,7 +352,6 @@ class VideoDataset(data.Dataset):
             return offsets
 
 
-
     def __getitem__(self, index):
         record = self.video_list[index]
         # check this is a legit video folder
@@ -343,13 +359,14 @@ class VideoDataset(data.Dataset):
         #     print(os.path.join(self.root_path, record.path, self.image_tmpl.format(1)))
         #     index = np.random.randint(len(self.video_list))
         #     record = self.video_list[index]
-        if self.load_from_video:
+        if self.load_from_video: 
             if not self.test_mode:
                 segment_indices = self._sample_indices_video(record) if self.random_shift else self._get_val_indices_video(record)
             else:
                 segment_indices = self._get_test_indices_video(record)
             return self.get_video(record, segment_indices)
-        elif self.from_hdf5:
+        
+        elif self.from_hdf5: 
             if not self.sparse_sampling:
                 if not self.test_mode:
                     segment_indices = self._sample_indices_video(record) if self.random_shift else self._get_val_indices_video(record)
@@ -363,6 +380,7 @@ class VideoDataset(data.Dataset):
             if self.random_shuffling:
                 segment_indices = np.random.permutation(segment_indices)
             return self.get_from_hdf5(record, segment_indices)
+        
         elif self.from_gulp:
             if not self.sparse_sampling:
                 if not self.test_mode:
@@ -375,6 +393,7 @@ class VideoDataset(data.Dataset):
                 else:
                     segment_indices = self._get_test_indices(record)
             return self.get_from_gulp(record, segment_indices)
+        
         else:
             if not self.sparse_sampling:
                 if not self.test_mode:
@@ -382,16 +401,22 @@ class VideoDataset(data.Dataset):
                 else:
                     segment_indices = self._get_test_indices_video(record)
             else:
+                # EXECUTE FROM HERE because the other conditions are not met
                 if not self.test_mode:
+                    # training
                     segment_indices = self._sample_indices(record) if self.random_shift else self._get_val_indices(record)
                 else:
+                    # test
                     segment_indices = self._get_test_indices(record)
+
             if self.random_shuffling:
                 segment_indices = np.random.permutation(segment_indices)
+
             return self.get(record, segment_indices)
 
-    def get(self, record, indices):
 
+    def get(self, record, indices):
+        # num_clips = 1 by default, in training = 1, in test can be modified (on the repo is = 1)
         if self.num_clips > 1:
             process_data_final = []
             for k in range(self.num_clips):
@@ -407,11 +432,13 @@ class VideoDataset(data.Dataset):
 
                 process_data, label = self.transform((images, record.label))
                 process_data_final.append(process_data)
-            process_data_final = torch.stack(process_data_final, 0)#
+            process_data_final = torch.stack(process_data_final, 0)
+
             if self.multilabel:
                 label = {'action_label': record.label,
                          'verb_label': record.label_verb,
                          'noun_label': record.label_noun}
+                
             return process_data_final, label
 
         else:
@@ -425,16 +452,17 @@ class VideoDataset(data.Dataset):
                 if p < record.num_frames:
                     p += 1
             process_data, label = self.transform((images, record.label))
+
             if self.multilabel:
                 # print('multilabel')
                 label = {'action_label': record.label,
                          'verb_label': record.label_verb,
                          'noun_label': record.label_noun}
+                
             return process_data, label
             
+
     def get_from_hdf5(self, record, indices):
-
-
         if self.num_clips > 1:
             process_data_final = []
             hdf5_video_key = record.path
@@ -515,8 +543,6 @@ class VideoDataset(data.Dataset):
             return process_data, label
             
     def get_from_gulp(self, record, indices):
-
-
         if self.num_clips > 1:
             process_data_final = []
             video_id = record.path
@@ -563,6 +589,7 @@ class VideoDataset(data.Dataset):
                          'verb_label': record.label_verb,
                          'noun_label': record.label_noun}
             return process_data, label
+
 
     def get_video(self, record, indices):
         # print(indices)
