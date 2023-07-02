@@ -4,7 +4,7 @@ import torchvision
 import torchvision.datasets as datasets
 
 
-ROOT_DATASET = './dataset'
+#ROOT_DATASET = './dataset'
 
 
 def return_something_v1(split):
@@ -39,15 +39,28 @@ def return_kinetics400(split):
 
     return filename_imglist_train, filename_imglist_val, root_data, prefix
 
-def return_dataset(dataset, split):
+def return_meccano(split):
+    root_data = 'MECCANO/frames'
+    filename_imglist_train = 'MECCANO_train_actions.csv'
+    filename_imglist_val = 'MECCANO_val_actions.csv'
+    filename_imglist_test = 'MECCANO_test_actions.csv'
+    prefix = '{:05d}.jpg'
+
+    return filename_imglist_train, filename_imglist_val, filename_imglist_test, root_data, prefix
+
+def return_dataset(dataset, path, split):
     dict_single = {'something-v1': return_something_v1, 'something-v2': return_something_v2, 
-                   'diving48':return_diving48, 'kinetics400': return_kinetics400,}
+                   'diving48':return_diving48, 'kinetics400': return_kinetics400, 'meccano': return_meccano}
+    
     if dataset in dict_single:
-            file_imglist_train, file_imglist_val, root_data, prefix = dict_single[dataset](split)
+            #file_imglist_train, file_imglist_val, filename_imglist_test, root_data, prefix = dict_single[dataset](split)
+            file_imglist_train, file_imglist_val, filename_imglist_test, root_data, prefix = dict_single[dataset]
     else:
         raise ValueError('Unknown dataset '+dataset)
-    file_imglist_train = os.path.join(ROOT_DATASET, file_imglist_train)
-    file_imglist_val = os.path.join(ROOT_DATASET, file_imglist_val)
-    root_data = os.path.join(ROOT_DATASET, root_data)
+    
+    file_imglist_train = os.path.join(path, file_imglist_train)
+    file_imglist_val = os.path.join(path, file_imglist_val)
+    file_imglist_test = os.path.join(path, file_imglist_test)
+    root_data = os.path.join(path, root_data)
 
-    return file_imglist_train, file_imglist_val, root_data, prefix
+    return file_imglist_train, file_imglist_val, filename_imglist_test, root_data, prefix

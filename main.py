@@ -56,6 +56,12 @@ def main():
         args.rgb_prefix = 'img_'
         rgb_read_format = "{:05d}.jpg"
         
+    # MECCANO dataset
+    elif args.dataset == 'meccano':
+        num_class = 61
+        args.rgb_prefix = ''
+        rgb_read_format = "{:05d}.jpg"
+    
     # skate dataset
     elif args.dataset == 'skate':
         num_class = 4
@@ -90,7 +96,7 @@ def main():
     note_fl.close()
     writer = SummaryWriter(model_dir)
 
-    args.train_list, args.val_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.split)
+    args.train_list, args.val_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path) #args.split
 
     if 'something' in args.dataset:
         # label transformation for left/right categories
