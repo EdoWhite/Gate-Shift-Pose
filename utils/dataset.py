@@ -102,16 +102,25 @@ class VideoDataset(data.Dataset):
 
 
     def _parse_list(self):
+        #self.list_file is the dataset file
         # check the frame number is large >3:
+        
         # usualy it is [video_id, num_frames, class_idx]
         if self.from_gulp:
             self.list_file = self.list_file.replace(".txt", "_gulp.txt")
+
         if "kinetics" in self.root_path:
             tmp = [x.strip().split(',') for x in open(self.list_file)]
+
+        elif "MECCANO" in self.root_path:
+            tmp = [x.strip().split(',') for x in open(self.list_file)]
+
         else:
             tmp = [x.strip().split(' ') for x in open(self.list_file)]
+
         tmp = [item for item in tmp if int(item[1])>=3]
         self.video_list = [VideoRecord(item, self.multilabel) for item in tmp]
+
         if self.from_gulp:
             mode = "train" if "val" not in self.list_file else "val"
             self.gulp = gulpio2.GulpDirectory(os.path.join(self.root_path, mode))
@@ -119,6 +128,7 @@ class VideoDataset(data.Dataset):
             for dict in self.gulp.all_meta_dicts:
                 len_gulp += len(dict)
             assert len_gulp == len(self.video_list), f"No. of samples is different {self.list_file}({len(self.video_list)}) | {os.path.join(self.root_path, mode)}({len_gulp})"
+            
         print('video number:%d'%(len(self.video_list)))
 
 
