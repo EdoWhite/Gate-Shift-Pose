@@ -56,23 +56,28 @@ class MeccanoVideoRecord(object):
     @property
     def path(self):
         return self._data[0]
+    
+    @property
+    def num_frames(self):
+
+        return int(self._data[1])
 
     @property
     def label(self):
-        return int(self._data[2])
+        return int(self._data[1])
 
     @property
     def label_name(self):
-        return int(self._data[3])
+        return int(self._data[2])
 
 
     @property
     def start_frame(self):
-        return self._data[4]
+        return self._data[3]
 
     @property
     def end_frame(self):
-        return self._data[5]
+        return self._data[4]
 
 """
 All datasets that represent a map from keys to data samples should subclass it. 
@@ -450,7 +455,8 @@ class VideoDataset(data.Dataset):
                 if not self.test_mode:
                     # training and val
                     segment_indices = self._sample_indices(record) if self.random_shift else self._get_val_indices(record)
-                    print ("SEGMENT_INDICES: " + segment_indices)
+                    print("RECORD: " + " ".join(record))
+                    print("SEGMENT_INDICES: " + " ".join(str(idx) for idx in segment_indices))
                 else:
                     # test
                     segment_indices = self._get_test_indices(record)
@@ -459,7 +465,6 @@ class VideoDataset(data.Dataset):
                 segment_indices = np.random.permutation(segment_indices)
 
             item = self.get(record, segment_indices)
-            print("self.get(record, segment_indices): " + item)
             return item
 
 
@@ -495,6 +500,7 @@ class VideoDataset(data.Dataset):
                 indices = indices + record.start_frame
             for seg_ind in indices:
                 p = int(seg_ind)
+                print("(record.path, p): " + " ".join(record.path) + " ".join(p))
                 seg_imgs = self._load_image(record.path, p)
                 images.extend(seg_imgs)
                 if p < record.num_frames:
