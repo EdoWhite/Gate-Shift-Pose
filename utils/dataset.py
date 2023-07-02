@@ -47,6 +47,32 @@ class VideoRecord(object):
             return int(self._data[5])
         else:
             return 0
+        
+class MeccanoVideoRecord(object):
+    def __init__(self, row, multilabel):
+        self._data = row
+        self._multilabel = multilabel
+
+    @property
+    def path(self):
+        return self._data[0]
+
+    @property
+    def label(self):
+        return int(self._data[2])
+
+    @property
+    def label_name(self):
+        return int(self._data[3])
+
+
+    @property
+    def start_frame(self):
+        return self._data[4]
+
+    @property
+    def end_frame(self):
+        return self._data[5]
 
 """
 All datasets that represent a map from keys to data samples should subclass it. 
@@ -113,13 +139,19 @@ class VideoDataset(data.Dataset):
             tmp = [x.strip().split(',') for x in open(self.list_file)]
 
         elif "MECCANO" in self.root_path:
+            print("Using MECCANO dataset...")
             tmp = [x.strip().split(',') for x in open(self.list_file)]
 
         else:
             tmp = [x.strip().split(' ') for x in open(self.list_file)]
 
         tmp = [item for item in tmp if int(item[1])>=3]
-        self.video_list = [VideoRecord(item, self.multilabel) for item in tmp]
+
+        if "MECCANO" in self.root_path:
+             print("Using MeccanoVideoRecord...")
+             self.video_list = [MeccanoVideoRecord(item, self.multilabel) for item in tmp]
+        else:
+            self.video_list = [VideoRecord(item, self.multilabel) for item in tmp]
 
         if self.from_gulp:
             mode = "train" if "val" not in self.list_file else "val"
@@ -144,7 +176,10 @@ class VideoDataset(data.Dataset):
             start_idx = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
             offsets = [(idx * t_stride + start_idx) % record.num_frames for idx in range(self.num_segments)]
             return np.array(offsets) + 1
+        
+        # self.dense_sample is false
         else:
+
             num_frames = record.num_frames if record is not None else num_frames
 
             average_duration = num_frames // self.num_segments
@@ -413,8 +448,9 @@ class VideoDataset(data.Dataset):
             else:
                 # EXECUTE FROM HERE because the other conditions are not met
                 if not self.test_mode:
-                    # training
+                    # training and val
                     segment_indices = self._sample_indices(record) if self.random_shift else self._get_val_indices(record)
+                    print ("SEGMENT_INDICES: " + segment_indices)
                 else:
                     # test
                     segment_indices = self._get_test_indices(record)
@@ -422,7 +458,9 @@ class VideoDataset(data.Dataset):
             if self.random_shuffling:
                 segment_indices = np.random.permutation(segment_indices)
 
-            return self.get(record, segment_indices)
+            item = self.get(record, segment_indices)
+            print("self.get(record, segment_indices): " + item)
+            return item
 
 
     def get(self, record, indices):
