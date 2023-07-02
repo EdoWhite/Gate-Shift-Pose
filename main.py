@@ -96,7 +96,7 @@ def main():
     note_fl.close()
     writer = SummaryWriter(model_dir)
 
-    args.train_list, args.val_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path) #args.split
+    args.train_list, args.val_list, args.test_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path) #args.split
 
     if 'something' in args.dataset:
         # label transformation for left/right categories
@@ -115,7 +115,7 @@ def main():
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
                        target_transform=target_transforms)
     
-    # FEATURE EXTRACTOR MODE
+    # FEATURE EXTRACTOR MODE - TO MODIFY & TEST
     if args.feature_extractor == True:
         # lead pretrained weights
         checkpoint = torch.load(args.feature_extractor)
