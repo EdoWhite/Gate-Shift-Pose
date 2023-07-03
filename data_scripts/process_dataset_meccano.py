@@ -108,20 +108,27 @@ if __name__ == '__main__':
     #parser.add_argument('--output_labels_file', help='Path to the output labels file', default='./meccanoTest/meccano_val_labels.txt')
 
     parser.add_argument('--meccano_dataset_dir', help='Path to the MECCANO labels CSV files', default='../MECCANO')
-    parser.add_argument('--output_dir', help='Path to the MECCANO frames directory')
+    parser.add_argument('--output_dir', help='Path to the output directory')
 
     args = parser.parse_args()
 
-    meccano_labels_dir = args.meccano_dataset_dir
+    meccano_dataset_dir = args.meccano_dataset_dir
     meccano_frames_dir = os.path.join(args.meccano_dataset_dir, 'frames')
 
     output_dir = args.output_dir
     output_frames_dir = os.path.join(args.output_dir, 'frames')
 
-    train = os.path.join(meccano_labels_dir, 'MECCANO_train_actions.csv')
-    val = os.path.join(meccano_labels_dir, 'MECCANO_val_actions.csv')
-    test = os.path.join(meccano_labels_dir, 'MECCANO_test_actions.csv')
+    train_csv = os.path.join(meccano_dataset_dir, 'MECCANO_train_actions.csv')
+    val_csv = os.path.join(meccano_dataset_dir, 'MECCANO_val_actions.csv')
+    test_csv = os.path.join(meccano_dataset_dir, 'MECCANO_test_actions.csv')
 
-    arrange_meccano_dataset(train, meccano_frames_dir, output_frames_dir, output_dir)
-    arrange_meccano_dataset(val, meccano_frames_dir, output_frames_dir, output_dir)
-    arrange_meccano_dataset(test, meccano_frames_dir, output_frames_dir, output_dir)
+    train_txt = os.path.join(output_dir, 'train_videofolder.txt')
+    val_txt = os.path.join(output_dir, 'val_videofolder.txt')
+    test_txt = os.path.join(output_dir, 'test_videofolder.txt')
+
+    print("ARRANGING TRAIN FRAMES")
+    arrange_meccano_dataset(train_csv, meccano_frames_dir, output_frames_dir, train_txt)
+    print("ARRANGING VALIDATION FRAMES")
+    arrange_meccano_dataset(val_csv, meccano_frames_dir, output_frames_dir, val_txt)
+    print("ARRANGING TEST FRAMES")
+    arrange_meccano_dataset(test_csv, meccano_frames_dir, output_frames_dir, test_txt)

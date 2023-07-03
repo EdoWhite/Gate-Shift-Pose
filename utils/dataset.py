@@ -143,7 +143,7 @@ class VideoDataset(data.Dataset):
         if "kinetics" in self.root_path:
             tmp = [x.strip().split(',') for x in open(self.list_file)]
 
-        elif "MECCANO" in self.root_path:
+        elif "MECCANO__" in self.root_path:
             print("Using MECCANO dataset...")
             tmp = [x.strip().split(',') for x in open(self.list_file)]
 
@@ -152,7 +152,7 @@ class VideoDataset(data.Dataset):
 
         tmp = [item for item in tmp if int(item[1])>=3]
 
-        if "MECCANO" in self.root_path:
+        if "MECCANO__" in self.root_path:
              print("Using MeccanoVideoRecord...")
              self.video_list = [MeccanoVideoRecord(item, self.multilabel) for item in tmp]
         else:
