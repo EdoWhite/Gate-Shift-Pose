@@ -1,12 +1,47 @@
 import os
 import csv
 import shutil
-from multiprocessing import Pool
+import argparse
 
-meccano_labels_file = '../MECCANO/MECCANO_val_actions.csv'
-meccano_frames_dir = '../MECCANO/frames'
-output_frames_dir = './meccanoTest/frames'
-output_labels_file = './meccanoTest/meccano_val_labels.txt'
+"""
+MECCANO Dataset Arrangement Script
+
+This script arranges the frames of the MECCANO dataset into new folders, where each folder corresponds to an action.
+The MECCANO dataset consists of videos with associated action labels in a CSV file. The frames of each video are stored
+in the 'MECCANO/frames/<video_id>/<frame_id>.jpg' directory.
+
+The CSV file with the actions label comes in the following format:
+    video_id, action_id, action_name, start_frame, end_frame
+
+Each row of the CSV file represents an action in a video, where:
+    - video_id: ID of the video.
+    - action_id: ID of the action.
+    - action_name: Name of the action.
+    - start_frame: Start frame of the action.
+    - end_frame: End frame of the action.
+
+The script will create new directories for each action, and it will copy the corresponding frames from MECCANO to the 
+respective action directory. The script will also generate a labels file in the format:
+    video_folder num_frames label
+
+Usage:
+    python process_dataset_meccano.py
+
+Input:
+    - 'MECCANO/meccano_labels.csv': CSV file containing action labels.
+    - 'MECCANO/frames': Directory containing all frames of the MECCANO dataset.
+
+Output:
+    - 'frames': Directory containing the frames arranged into new folders for each action.
+    - 'meccano_labels.txt': Labels file containing information about each action folder.
+
+Please note:
+    - The script ensures that the folder names are unique by appending a counter if a folder with the same name exists.
+    - The video IDs in the new directory names will have the same length with leading zeros for better sorting.
+
+Author:
+    Edoardo Bianchi
+"""
 
 def ensure_unique_folder_name(folder_path):
     # Add a counter to the folder name to make it unique
@@ -19,7 +54,8 @@ def ensure_unique_folder_name(folder_path):
 
 def process_action(video_id, action_id, action_name, start_frame, end_frame, meccano_frames_dir, output_frames_dir):
     # Create a new folder for each action
-    action_dir = os.path.join(output_frames_dir, video_id)
+    action_dir_name = f"{video_id}_{action_id}"
+    action_dir = os.path.join(output_frames_dir, action_dir_name)
     action_dir = ensure_unique_folder_name(action_dir)
     os.makedirs(action_dir, exist_ok=True)
 
@@ -33,7 +69,7 @@ def process_action(video_id, action_id, action_name, start_frame, end_frame, mec
         dst_path = os.path.join(action_dir, frame_name)
         shutil.copyfile(src_path, dst_path)
 
-    return video_id, end_frame_num - start_frame_num + 1, action_id
+    return action_dir_name, end_frame_num - start_frame_num + 1, action_id
 
 def arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_frames_dir, output_labels_file):
     # Create output directories if they don't exist
@@ -50,9 +86,10 @@ def arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_fram
             video_id, action_id, action_name, start_frame, end_frame = row
             actions.append((video_id, action_id, action_name, start_frame, end_frame, meccano_frames_dir, output_frames_dir))
 
-    # Process actions in parallel
-    with Pool() as pool:
-        results = pool.starmap(process_action, actions)
+    results = []
+    for action in actions:
+        result = process_action(*action)
+        results.append(result)
 
     # Write action information to the labels file
     with open(output_labels_file, 'w') as file:
@@ -63,4 +100,28 @@ def arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_fram
     print('MECCANO dataset arrangement and labels file generation completed.')
 
 
-arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_frames_dir, output_labels_file)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='MECCANO Dataset Arrangement Script')
+    #parser.add_argument('--meccano_labels_dir', help='Path to the MECCANO labels CSV files', default='../MECCANO')
+    #parser.add_argument('--meccano_frames_dir', help='Path to the MECCANO frames directory', default='../MECCANO/frames')
+    #parser.add_argument('--output_frames_dir', help='Path to the output frames directory', default='./meccanoTest/frames')
+    #parser.add_argument('--output_labels_file', help='Path to the output labels file', default='./meccanoTest/meccano_val_labels.txt')
+
+    parser.add_argument('--meccano_dataset_dir', help='Path to the MECCANO labels CSV files', default='../MECCANO')
+    parser.add_argument('--output_dir', help='Path to the MECCANO frames directory')
+
+    args = parser.parse_args()
+
+    meccano_labels_dir = args.meccano_dataset_dir
+    meccano_frames_dir = os.path.join(args.meccano_dataset_dir, 'frames')
+
+    output_dir = args.output_dir
+    output_frames_dir = os.path.join(args.output_dir, 'frames')
+
+    train = os.path.join(meccano_labels_dir, 'MECCANO_train_actions.csv')
+    val = os.path.join(meccano_labels_dir, 'MECCANO_val_actions.csv')
+    test = os.path.join(meccano_labels_dir, 'MECCANO_test_actions.csv')
+
+    arrange_meccano_dataset(train, meccano_frames_dir, output_frames_dir, output_dir)
+    arrange_meccano_dataset(val, meccano_frames_dir, output_frames_dir, output_dir)
+    arrange_meccano_dataset(test, meccano_frames_dir, output_frames_dir, output_dir)
