@@ -5,7 +5,8 @@ import torchvision.datasets as datasets
 
 
 #ROOT_DATASET = './dataset'
-
+# ADDED SUPPORT FOR 3 DATASET SPLITS
+# ADDED SUPPORT TO FIND DATA IN DIFFEREN DISK LOCATIONS
 
 def return_something_v1():
     root_data = 'something-v1/20bn-something-something-v1'

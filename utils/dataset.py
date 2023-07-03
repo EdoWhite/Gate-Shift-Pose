@@ -403,6 +403,15 @@ class VideoDataset(data.Dataset):
 
 
     def __getitem__(self, index):
+        """ 
+        n_segments is the num of frames to consider. We sample n_segments frames from the num_frames. Then we load the sampled frames.
+
+        RECORD: Y7QZcr24ye0_00815 115 17
+        SEGMENT_INDICES: 24 48 89
+        (record.path, p): nOlRwoxsDJ0_00574 24
+        (record.path, p): nOlRwoxsDJ0_00574 48
+        (record.path, p): nOlRwoxsDJ0_00574 89
+        """
         record = self.video_list[index]
         # check this is a legit video folder
         # while not os.path.exists(os.path.join(self.root_path, record.path, self.image_tmpl.format(1))):
@@ -455,8 +464,8 @@ class VideoDataset(data.Dataset):
                 if not self.test_mode:
                     # training and val
                     segment_indices = self._sample_indices(record) if self.random_shift else self._get_val_indices(record)
-                    print("RECORD: " + " ".join(record))
-                    print("SEGMENT_INDICES: " + " ".join(str(idx) for idx in segment_indices))
+                    #print("RECORD: " + record.path + " " + str(record.num_frames) + " " + str(record.label))
+                    #print("SEGMENT_INDICES: " + " ".join(str(idx) for idx in segment_indices))
                 else:
                     # test
                     segment_indices = self._get_test_indices(record)
@@ -500,7 +509,10 @@ class VideoDataset(data.Dataset):
                 indices = indices + record.start_frame
             for seg_ind in indices:
                 p = int(seg_ind)
-                print("(record.path, p): " + " ".join(record.path) + " ".join(p))
+                # (record.path, p): nOlRwoxsDJ0_00574 24
+                # (record.path, p): nOlRwoxsDJ0_00574 48
+                # (record.path, p): nOlRwoxsDJ0_00574 89
+                #print("(record.path, p): " + str(record.path) + str(p))
                 seg_imgs = self._load_image(record.path, p)
                 images.extend(seg_imgs)
                 if p < record.num_frames:
