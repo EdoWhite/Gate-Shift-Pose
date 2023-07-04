@@ -20,9 +20,9 @@ import pickle as pkl
 # options
 parser = argparse.ArgumentParser(
     description="GSF testing on the full validation set")
-parser.add_argument('dataset', type=str, choices=['something-v1', 'something-v2', 'diving48', 'kinetics400'])
+parser.add_argument('dataset', type=str, choices=['something-v1', 'something-v2', 'diving48', 'kinetics400', 'meccano'])
 parser.add_argument('weights', type=str)
-parser.add_argument('--split', type=str, default="val")
+#parser.add_argument('--split', type=str, default="val")
 parser.add_argument('--arch', type=str, default="bninception")
 parser.add_argument('--save_scores', default=False, action="store_true")
 parser.add_argument('--test_segments', type=int, default=8)
@@ -72,8 +72,10 @@ def accuracy(output, target, topk=(1,)):
          res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
-args.train_list, args.val_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.split)
-print(args.train_list, args.val_list)
+#args.train_list, args.val_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.split)
+args.train_list, args.val_list, args.test_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path) #args.split
+
+print(args.train_list, args.val_list, args.test_list)
 
 if args.dataset == 'something-v1':
     num_class = 174
@@ -94,6 +96,13 @@ elif args.dataset == 'kinetics400':
     num_class = 400
     args.rgb_prefix = 'img_{:05d}.jpg'
     rgb_read_format = ''
+
+# MECCANO dataset
+elif args.dataset == 'meccano':
+    num_class = 61
+    args.rgb_prefix = ''
+    rgb_read_format = "{:05d}.jpg"
+
 else:
     raise ValueError('Unknown dataset '+args.dataset)
 
@@ -135,7 +144,7 @@ else:
     raise ValueError("Unsupported number of test crops: {}".format(args.test_crops))
 
 # Load the dataset
-data_loader = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.val_list, num_segments=args.test_segments,
+data_loader = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments,
                                                        image_tmpl=args.rgb_prefix+rgb_read_format, test_mode=True,
                                                        transform=torchvision.transforms.Compose([cropping,
                                                                                                  Stack(roll=(args.arch in ['bninception','inceptionv3'])),

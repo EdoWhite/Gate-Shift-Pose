@@ -20,6 +20,7 @@ import os
 import numpy
 import pickle as pkl
 from torch.cuda import amp
+import wandb
 
 
 torch.backends.cudnn.benchmark = True
@@ -94,6 +95,11 @@ def main():
                   ''.format(args.gsf, args.gsf_ch_fusion, args.gsf_ch_ratio, args.gsf_temp_kern, args.batch_size,
                             args.iter_size, args.warmup, args.epochs, args.lr))
     note_fl.close()
+
+    #### ADD WANDB SUPPORT ####
+    wandb.init(project='MECCANO-GSF', sync_tensorboard=True)
+    ###########################
+
     writer = SummaryWriter(model_dir)
 
     args.train_list, args.val_list, args.test_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path) #args.split
