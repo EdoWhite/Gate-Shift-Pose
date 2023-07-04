@@ -44,8 +44,8 @@ def return_kinetics400():
 def return_meccano():
     root_data = 'meccano/frames'
     filename_imglist_train = 'meccano/train_videofolder.txt'
-    filename_imglist_val = 'meccano/train_videofolder.txt'
-    filename_imglist_test = 'meccano/train_videofolder.txt'
+    filename_imglist_val = 'meccano/val_videofolder.txt'
+    filename_imglist_test = 'meccano/test_videofolder.txt'
     prefix = '{:05d}.jpg'
 
     return filename_imglist_train, filename_imglist_val, filename_imglist_test, root_data, prefix

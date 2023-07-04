@@ -21,6 +21,7 @@ import pickle as pkl
 parser = argparse.ArgumentParser(
     description="GSF testing on the full validation set")
 parser.add_argument('dataset', type=str, choices=['something-v1', 'something-v2', 'diving48', 'kinetics400', 'meccano'])
+parser.add_argument('--dataset_path', type=str, default='./dataset')
 parser.add_argument('weights', type=str)
 #parser.add_argument('--split', type=str, default="val")
 parser.add_argument('--arch', type=str, default="bninception")
