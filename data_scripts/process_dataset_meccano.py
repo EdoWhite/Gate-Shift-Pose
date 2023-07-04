@@ -28,12 +28,14 @@ Usage:
     python process_dataset_meccano.py
 
 Input:
-    - 'MECCANO/meccano_labels.csv': CSV file containing action labels.
-    - 'MECCANO/frames': Directory containing all frames of the MECCANO dataset.
+    - 'meccano dataset dir': MECCANO dataset directory on the disk
+    - 'output dir': Directory where to place the processed data.
 
 Output:
     - 'frames': Directory containing the frames arranged into new folders for each action.
-    - 'meccano_labels.txt': Labels file containing information about each action folder.
+    - 'train_videofolder.txt': Labels file containing information about train data.
+    - 'val_videofolder.txt': Labels file containing information about val data.
+    - 'test_videofolder.txt': Labels file containing information about test data.
 
 Please note:
     - The script ensures that the folder names are unique by appending a counter if a folder with the same name exists.
@@ -59,15 +61,17 @@ def process_action(video_id, action_id, action_name, start_frame, end_frame, mec
     action_dir = ensure_unique_folder_name(action_dir)
     os.makedirs(action_dir, exist_ok=True)
 
-    # Copy frames from MECCANO to the action folder
+    # Copy frames from MECCANO to the action folder. Offset is used to name all the frames from 00001.jpg to <num_frames>.jpg
     start_frame_num = int(start_frame.split('.')[0])
     end_frame_num = int(end_frame.split('.')[0])
+    frame_num_offset = 1
 
     for frame_num in range(start_frame_num, end_frame_num + 1):
         frame_name = f'{frame_num:05}.jpg'
         src_path = os.path.join(meccano_frames_dir, video_id, frame_name)
-        dst_path = os.path.join(action_dir, frame_name)
+        dst_path = os.path.join(action_dir, f'{frame_num_offset:05}.jpg')
         shutil.copyfile(src_path, dst_path)
+        frame_num_offset += 1
 
     return action_dir_name, end_frame_num - start_frame_num + 1, action_id
 

@@ -1,6 +1,6 @@
 import argparse
 parser = argparse.ArgumentParser(description="PyTorch implementation of Gate-Shift Networks")
-parser.add_argument('--dataset', type=str, choices=['something-v1', 'diving48', 'something-v2', 'kinetics400'])
+parser.add_argument('--dataset', type=str, choices=['something-v1', 'diving48', 'something-v2', 'kinetics400', 'meccano'])
 parser.add_argument('--dataset_path', type=str, default='./dataset')
 parser.add_argument('--train_list', type=str,default="")
 parser.add_argument('--val_list', type=str, default="")
