@@ -73,7 +73,7 @@ def process_action(video_id, action_id, action_name, start_frame, end_frame, mec
         shutil.copyfile(src_path, dst_path)
         frame_num_offset += 1
 
-    return action_dir_name, end_frame_num - start_frame_num + 1, action_id
+    return os.path.basename(action_dir), end_frame_num - start_frame_num + 1, action_id
 
 def arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_frames_dir, output_labels_file):
     # Create output directories if they don't exist
