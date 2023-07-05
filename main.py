@@ -97,7 +97,8 @@ def main():
     note_fl.close()
 
     #### ADD WANDB SUPPORT ####
-    wandb.init(project='MECCANO-GSF', sync_tensorboard=True)
+    #wandb.login()
+    #wandb.init(project='MECCANO-GSF', sync_tensorboard=True)
     ###########################
 
     writer = SummaryWriter(model_dir)

@@ -9,7 +9,7 @@ parser.add_argument('--root_path', type=str, default="")
 parser.add_argument('--store_name', type=str, default="")
 # ========================= Model Configs ==========================
 
-parser.add_argument('--feature_extractor', type=bool, default=False)
+parser.add_argument('--feature_extractor', default=False, action="store_true")
 
 parser.add_argument('--arch', type=str, default="BNInception")
 parser.add_argument('--num_segments', type=int, default=3)
