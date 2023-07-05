@@ -105,9 +105,9 @@ def arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_fram
     print('MECCANO dataset arrangement and labels file generation completed.')
 
 def copy_subfolders_to_parent_folder(parent_folder):
-    train_folder = os.path.join(parent_folder, 'train')
-    val_folder = os.path.join(parent_folder, 'val')
-    test_folder = os.path.join(parent_folder, 'test')
+    train_folder = os.path.join(parent_folder, 'Train')
+    val_folder = os.path.join(parent_folder, 'Val')
+    test_folder = os.path.join(parent_folder, 'Test')
 
     subfolders = []
 
@@ -145,15 +145,15 @@ if __name__ == '__main__':
 
     meccano_dataset_dir = args.meccano_dataset_dir
     output_dir = args.output_dir
+    
+    train_csv = os.path.join(meccano_dataset_dir, 'MECCANO_train_actions.csv')
+    val_csv = os.path.join(meccano_dataset_dir, 'MECCANO_val_actions.csv')
+    test_csv = os.path.join(meccano_dataset_dir, 'MECCANO_test_actions.csv')
 
     if args.process_only_depth == False:
         # ARRANGE RGB FRAMES
         meccano_frames_dir = os.path.join(meccano_dataset_dir, 'frames')
         output_frames_dir = os.path.join(output_dir, 'frames')
-
-        train_csv = os.path.join(meccano_dataset_dir, 'MECCANO_train_actions.csv')
-        val_csv = os.path.join(meccano_dataset_dir, 'MECCANO_val_actions.csv')
-        test_csv = os.path.join(meccano_dataset_dir, 'MECCANO_test_actions.csv')
 
         train_txt = os.path.join(output_dir, 'train_videofolder.txt')
         val_txt = os.path.join(output_dir, 'val_videofolder.txt')
