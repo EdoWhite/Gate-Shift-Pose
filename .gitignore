@@ -1,5 +1,6 @@
 data/*
 dataset/**
+dataset_depth/**
 experiments
 CHECKPOINT/**
 meccanoTest
