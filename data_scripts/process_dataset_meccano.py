@@ -3,47 +3,6 @@ import csv
 import shutil
 import argparse
 
-"""
-MECCANO Dataset Arrangement Script
-
-This script arranges the frames of the MECCANO dataset into new folders, where each folder corresponds to an action.
-The MECCANO dataset consists of videos with associated action labels in a CSV file. The frames of each video are stored
-in the 'MECCANO/frames/<video_id>/<frame_id>.jpg' directory.
-
-The CSV file with the actions label comes in the following format:
-    video_id, action_id, action_name, start_frame, end_frame
-
-Each row of the CSV file represents an action in a video, where:
-    - video_id: ID of the video.
-    - action_id: ID of the action.
-    - action_name: Name of the action.
-    - start_frame: Start frame of the action.
-    - end_frame: End frame of the action.
-
-The script will create new directories for each action, and it will copy the corresponding frames from MECCANO to the 
-respective action directory. The script will also generate a labels file in the format:
-    video_folder num_frames label
-
-Usage:
-    python process_dataset_meccano.py
-
-Input:
-    - 'meccano dataset dir': MECCANO dataset directory on the disk
-    - 'output dir': Directory where to place the processed data.
-
-Output:
-    - 'frames': Directory containing the frames arranged into new folders for each action.
-    - 'train_videofolder.txt': Labels file containing information about train data.
-    - 'val_videofolder.txt': Labels file containing information about val data.
-    - 'test_videofolder.txt': Labels file containing information about test data.
-
-Please note:
-    - The script ensures that the folder names are unique by appending a counter if a folder with the same name exists.
-    - The video IDs in the new directory names will have the same length with leading zeros for better sorting.
-
-Author:
-    Edoardo Bianchi
-"""
 
 def ensure_unique_folder_name(folder_path):
     # Add a counter to the folder name to make it unique
@@ -104,30 +63,24 @@ def arrange_meccano_dataset(meccano_labels_file, meccano_frames_dir, output_fram
 
     print('MECCANO dataset arrangement and labels file generation completed.')
 
-def copy_subfolders_to_parent_folder(parent_folder):
-    train_folder = os.path.join(parent_folder, 'Train')
-    val_folder = os.path.join(parent_folder, 'Val')
-    test_folder = os.path.join(parent_folder, 'Test')
+def copy_subfolders_to_parent_folder(directory):
+    train_folder = os.path.join(directory, 'Train')
+    val_folder = os.path.join(directory, 'Val')
+    test_folder = os.path.join(directory, 'Test')
+    depth_frames_folder = directory
 
-    subfolders = []
+    # Create the 'Depth_frames' directory if it doesn't exist
+    if not os.path.exists(depth_frames_folder):
+        os.makedirs(depth_frames_folder)
 
-    # Collect subfolder names from 'train', 'val', and 'test' directories
+    # Copy subfolders to 'Depth_frames' directory
     for folder in [train_folder, val_folder, test_folder]:
-        if os.path.isdir(folder):
-            subfolders.extend(os.listdir(folder))
+        for subfolder in os.listdir(folder):
+            subfolder_path = os.path.join(folder, subfolder)
+            destination_path = os.path.join(depth_frames_folder, subfolder)
+            shutil.copytree(subfolder_path, destination_path)
 
-    # Copy subfolders to the parent folder
-    for subfolder in subfolders:
-        subfolder_path = os.path.join(parent_folder, subfolder)
-        if os.path.isdir(subfolder_path):
-            shutil.copytree(subfolder_path, os.path.join(parent_folder, subfolder))
-
-    # Remove 'train', 'val', and 'test' directories
-    #shutil.rmtree(train_folder)
-    #shutil.rmtree(val_folder)
-    #shutil.rmtree(test_folder)
-
-    print("Subfolders have been copied to the parent folder.")
+    print("Subfolders have been copied to the 'Depth_frames' directory.")
 
 
 if __name__ == '__main__':
