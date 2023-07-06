@@ -125,10 +125,16 @@ def main():
     # FEATURE EXTRACTOR MODE - TO MODIFY & TEST
     if args.feature_extractor == True:
         # lead pretrained weights
-        checkpoint = torch.load(args.feature_extractor)
+        checkpoint = torch.load(args.checkpoint_path)
 
-        base_dict = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint['model_state_dict'].items())}
-        model.load_state_dict(base_dict, strict=True)
+        model_dict = model.state_dict()
+
+        # base_dict = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint['model_state_dict'].items())}
+        # from china post
+        base_dict = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint['model_state_dict'].items()) if (k in model_dict and 'fc' not in k)}
+        model_dict.update(base_dict)
+        # model.load_state_dict(base_dict, strict=True)
+        model.load_state_dict(model_dict, strict=True)
 
         # freeze layers
         for param in model.parameters():
