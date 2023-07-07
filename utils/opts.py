@@ -9,6 +9,7 @@ parser.add_argument('--root_path', type=str, default="")
 parser.add_argument('--store_name', type=str, default="")
 # ========================= Model Configs ==========================
 
+parser.add_argument('--finetune', default=False, action="store_true")
 parser.add_argument('--feature_extractor', default=False, action="store_true")
 parser.add_argument('--checkpoint_path', type=str)
 

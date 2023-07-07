@@ -123,7 +123,8 @@ def main():
                        target_transform=target_transforms)
     
     # FEATURE EXTRACTOR MODE - TO MODIFY & TEST
-    if args.feature_extractor == True:
+    if (args.finetune == True) or (args.feature_extractor == True):
+        print(f'Feature Extractor or Fine Tuning with requires_grad: {args.finetune}')
         # lead pretrained weights
         checkpoint = torch.load(args.checkpoint_path)
 
@@ -136,9 +137,9 @@ def main():
         # model.load_state_dict(base_dict, strict=True)
         model.load_state_dict(model_dict, strict=True)
 
-        # freeze layers
+        # freeze or not freeze layers
         for param in model.parameters():
-            param.requires_grad = False
+            param.requires_grad = args.finetune
 
         # set num features of last layer
         num_ftrs = model.new_fc.in_features
