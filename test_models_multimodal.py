@@ -19,7 +19,7 @@ import pickle as pkl
 
 # options
 parser = argparse.ArgumentParser(
-    description="GSF testing on the full validation set")
+    description="GSF testing on the full test set")
 parser.add_argument('--dataset', type=str, choices=['something-v1', 'something-v2', 'diving48', 'kinetics400', 'meccano'])
 
 parser.add_argument('--dataset_path_rgb', type=str, default='./dataset')
@@ -28,7 +28,7 @@ parser.add_argument('--dataset_path_depth', type=str, default='./dataset_depth')
 parser.add_argument('--checkpoint_rgb', type=str)
 parser.add_argument('--checkpoint_depth', type=str)
 
-parser.add_argument('--weight_rgb', type=str)
+parser.add_argument('--weight_rgb', type=float, default=0.5)
 
 parser.add_argument('--test_segments_rgb', type=int, default=8)
 parser.add_argument('--test_segments_depth', type=int, default=32)
@@ -83,8 +83,8 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 
-args.train_list, args.val_list, args.test_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path_rgb)
-args.train_list, args.val_list, args.test_list, args.root_path, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path_depth)
+args.train_list, args.val_list, args.test_list, args.root_path_rgb, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path_rgb)
+args.train_list, args.val_list, args.test_list, args.root_path_depth, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path_depth)
 
 print(args.train_list, args.val_list, args.test_list)
 
@@ -175,7 +175,7 @@ else:
 
 
 # RGB
-data_loader_rgb = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments_rgb,
+data_loader_rgb = torch.utils.data.DataLoader(VideoDataset(args.root_path_rgb, args.test_list, num_segments=args.test_segments_rgb,
                                                        image_tmpl=args.rgb_prefix+rgb_read_format, test_mode=True,
                                                        transform=torchvision.transforms.Compose([cropping_rgb,
                                                                                                  Stack(roll=(args.arch in ['bninception','inceptionv3'])),
@@ -185,7 +185,7 @@ data_loader_rgb = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.
                                           batch_size=1, shuffle=False, num_workers=args.workers, pin_memory=True)
 
 # DEPTH
-data_loader_depth = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments_depth,
+data_loader_depth = torch.utils.data.DataLoader(VideoDataset(args.root_path_depth, args.test_list, num_segments=args.test_segments_depth,
                                                        image_tmpl=args.rgb_prefix+rgb_read_format, test_mode=True,
                                                        transform=torchvision.transforms.Compose([cropping_depth,
                                                                                                  Stack(roll=(args.arch in ['bninception','inceptionv3'])),
