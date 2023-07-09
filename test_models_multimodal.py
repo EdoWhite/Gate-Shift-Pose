@@ -241,9 +241,9 @@ top1 = AverageMeter()
 top5 = AverageMeter()
 
 with torch.no_grad():
-    for (i, (data_rgb, label_rgb)), (data_depth, label_depth) in zip(data_gen_rgb, data_gen_depth):
+    for (i, (data_rgb, label_rgb)), (j, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
         rst_rgb = eval_video((i, data_rgb, label_rgb), net_rgb)
-        rst_depth = eval_video((i, data_depth, label_depth), net_depth)
+        rst_depth = eval_video((j, data_depth, label_depth), net_depth)
 
         rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
 
