@@ -74,7 +74,7 @@ def main():
     global model_dir
 
     #model_dir = os.path.join('experiments', args.dataset, args.arch, datetime.now().strftime('%b%d_%H-%M-%S')+'_'+args.experiment_name)
-    os.path.join('experiments', args.dataset, args.arch, datetime.now().strftime('%b%d_%H-%M-%S')+'_'+args.experiment_name)
+    model_dir = os.path.join('experiments', args.dataset, args.arch, datetime.now().strftime('%b%d_%H-%M-%S')+'_'+args.experiment_name)
     os.makedirs(model_dir)
     os.makedirs(os.path.join(model_dir, args.root_log))
 

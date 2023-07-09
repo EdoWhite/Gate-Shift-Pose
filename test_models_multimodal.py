@@ -25,16 +25,19 @@ parser.add_argument('--dataset', type=str, choices=['something-v1', 'something-v
 parser.add_argument('--dataset_path_rgb', type=str, default='./dataset')
 parser.add_argument('--dataset_path_depth', type=str, default='./dataset_depth')
 
-parser.add_argument('--weights_rgb', type=str)
-parser.add_argument('--weights_depth', type=str)
+parser.add_argument('--checkpoint_rgb', type=str)
+parser.add_argument('--checkpoint_depth', type=str)
 
+parser.add_argument('--weight_rgb', type=str)
+
+parser.add_argument('--test_segments_rgb', type=int, default=8)
+parser.add_argument('--test_segments_depth', type=int, default=32)
 
 #parser.add_argument('--split', type=str, default="val")
 parser.add_argument('--arch', type=str, default="bninception")
 parser.add_argument('--save_scores', default=False, action="store_true")
-parser.add_argument('--test_segments', type=int, default=8)
-parser.add_argument('--max_num', type=int, default=-1)
 parser.add_argument('--test_crops', type=int, default=1)
+parser.add_argument('--max_num', type=int, default=-1)
 parser.add_argument('--input_size', type=int, default=0)
 parser.add_argument('--crop_fusion_type', type=str, default='avg')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
@@ -95,17 +98,17 @@ else:
     raise ValueError('Unknown dataset '+args.dataset)
 
 # RGB
-net_rgb = VideoModel(num_class=num_class, num_segments=args.test_segments, base_model=args.arch,
+net_rgb = VideoModel(num_class=num_class, num_segments=args.test_segments_rgb, base_model=args.arch,
                  consensus_type=args.crop_fusion_type, gsf=args.gsf, gsf_ch_ratio = args.gsf_ch_ratio)
-checkpoint_rgb = torch.load(args.weights_rgb)
+checkpoint_rgb = torch.load(args.checkpoint_rgb)
 base_dict_rgb = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint_rgb['model_state_dict'].items())}
 net_rgb.load_state_dict(base_dict_rgb, strict=True)
 
 
 # DEPTH
-net_depth = VideoModel(num_class=num_class, num_segments=args.test_segments, base_model=args.arch,
+net_depth = VideoModel(num_class=num_class, num_segments=args.test_segments_depth, base_model=args.arch,
                  consensus_type=args.crop_fusion_type, gsf=args.gsf, gsf_ch_ratio = args.gsf_ch_ratio)
-checkpoint_depth = torch.load(args.weights_depth)
+checkpoint_depth = torch.load(args.checkpoint_depth)
 base_dict_depth = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint_depth['model_state_dict'].items())}
 net_depth.load_state_dict(base_dict_depth, strict=True)
 
@@ -172,7 +175,7 @@ else:
 
 
 # RGB
-data_loader_rgb = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments,
+data_loader_rgb = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments_rgb,
                                                        image_tmpl=args.rgb_prefix+rgb_read_format, test_mode=True,
                                                        transform=torchvision.transforms.Compose([cropping_rgb,
                                                                                                  Stack(roll=(args.arch in ['bninception','inceptionv3'])),
@@ -182,7 +185,7 @@ data_loader_rgb = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.
                                           batch_size=1, shuffle=False, num_workers=args.workers, pin_memory=True)
 
 # DEPTH
-data_loader_depth = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments,
+data_loader_depth = torch.utils.data.DataLoader(VideoDataset(args.root_path, args.test_list, num_segments=args.test_segments_depth,
                                                        image_tmpl=args.rgb_prefix+rgb_read_format, test_mode=True,
                                                        transform=torchvision.transforms.Compose([cropping_depth,
                                                                                                  Stack(roll=(args.arch in ['bninception','inceptionv3'])),
@@ -240,12 +243,16 @@ video_labels = np.zeros(total_num_rgb)
 top1 = AverageMeter()
 top5 = AverageMeter()
 
+weight_depth = 1 - args.weight_rgb
+
 with torch.no_grad():
     for (i, (data_rgb, label_rgb)), (j, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
         rst_rgb = eval_video((i, data_rgb, label_rgb), net_rgb)
         rst_depth = eval_video((j, data_depth, label_depth), net_depth)
 
-        rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
+        #rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
+
+        rst_avg = (args.weight_rgb * rst_rgb[1] + weight_depth * rst_depth[1]) / (args.weight_rgb + weight_depth)
 
         video_labels[i] = rst_rgb[2]
 
@@ -264,9 +271,9 @@ cf = confusion_matrix(video_labels, video_pred).astype(float)
 cls_cnt = cf.sum(axis=1)
 cls_hit = np.diag(cf)
 cls_acc = cls_hit / cls_cnt
-print('-----Evaluation of {} is finished------'.format(args.weights))
+print('-----Evaluation of {} and {} is finished------'.format(args.checkpoint_rgb, args.checkpoint_depth))
 print('Class Accuracy {:.02f}%'.format(np.mean(cls_acc) * 100))
-print('Overall Prec@1 {:.02f}% Prec@5 {:.02f}%'.format(top1.avg, top5.avg))
+print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
 
 if args.save_scores:
