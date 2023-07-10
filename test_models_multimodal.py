@@ -277,5 +277,5 @@ print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
 
 if args.save_scores:
-    save_name = args.weights[:-8] + '_clips_' + str(args.num_clips) + '_crops_' + str(args.test_crops) + '.pkl'
+    save_name = args.checkpoint_rgb[:-8] + args.checkpoint_depth[:-8] + '_clips_' + str(args.num_clips) + '_crops_' + str(args.test_crops) + '.pkl'
     np.savez(save_name, scores=output_scores, labels=video_labels, predictions=np.array(video_pred), cf=cf)
