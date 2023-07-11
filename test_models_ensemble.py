@@ -270,6 +270,7 @@ def eval_ensemble_video(video_data, models):
         label = label[0]
 
     else:
+        ensemble_predictions = []
         with amp.autocast(enabled=args.with_amp):
             for model in models:
                 rst = model(input_var, with_amp=args.with_amp, idx=i, target=label)
