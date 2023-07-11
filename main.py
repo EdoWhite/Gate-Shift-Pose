@@ -123,7 +123,7 @@ def main():
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
                        target_transform=target_transforms)
     
-    # FEATURE EXTRACTOR MODE - TO MODIFY & TEST
+    # FEATURE EXTRACTOR MODE
     if (args.finetune == True) or (args.feature_extractor == True):
         print(f'Feature Extractor or Fine Tuning with requires_grad: {args.finetune}')
         # lead pretrained weights
@@ -321,8 +321,8 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
                         'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                         'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                         'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                        'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                        'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                        'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                        'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
                 epoch, i, len(train_loader), batch_time=batch_time,
                 data_time=data_time, loss=losses, top1=top1, top5=top5, lr=optimizer.param_groups[-1]['lr']))
             writer.add_scalar('train/batch_loss', losses.avg, epoch * len(train_loader) + i)
