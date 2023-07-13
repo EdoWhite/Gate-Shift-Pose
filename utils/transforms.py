@@ -116,6 +116,19 @@ class GroupScale(object):
     def __call__(self, img):
         img_group, label = img
         return [self.worker(img) for img in img_group], label
+    
+class GroupScaleHW(object):
+    """ Rescales the input PIL.Image to the given 'size'.
+    'size' is (h, w)
+    interpolation: Default: PIL.Image.BILINEAR
+    """
+
+    def __init__(self, h, w, interpolation=Image.BILINEAR):
+        self.worker = torchvision.transforms.Resize((h, w), interpolation)
+
+    def __call__(self, img):
+        img_group, label = img
+        return [self.worker(img) for img in img_group], label
 
 
 class RandomRotation(object):

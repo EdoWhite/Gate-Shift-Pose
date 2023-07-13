@@ -7,6 +7,7 @@ import torch.nn.parallel
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torch.optim
+import torchvision.transforms as transforms
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.tensorboard import SummaryWriter
 from models import VideoModel
@@ -189,6 +190,7 @@ def main():
             print(("=> no checkpoint found at '{}'".format(args.resume)))
     
     train_transform = torchvision.transforms.Compose([
+                        GroupScaleHW(h=360, w=640),
                         rand_augment_transform(config_str='rand-m9-mstd0.5', 
                                                 hparams={'translate_const': 117, 'img_mean': (124, 116, 104)}
                                               ),
