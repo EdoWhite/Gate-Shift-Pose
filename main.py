@@ -370,25 +370,25 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
             end = time.time()
             
             if i % args.print_freq == 0:
-                output = ('Test: [{0}/{1}]\t'
+                output = ('Val: [{0}/{1}]\t'
                             'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                             'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                            'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                            'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                            'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                            'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
                             i, len(val_loader), batch_time=batch_time, loss=losses,
                             top1=top1, top5=top5))
                 print(output)
                 log.write(output + '\n')
                 log.flush()
 
-    output = ('Testing Results: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Loss {loss.avg:.5f}'
+    output = ('Validation Results: Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f} Loss {loss.avg:.5f}'
             .format(top1=top1, top5=top5, loss=losses))
     print(output)
     output_best = '\nBest Prec@1: %.3f'%(best_prec1)
     print(output_best)
-    writer.add_scalar('test/loss', losses.avg, epoch + 1)
-    writer.add_scalar('test/top1Accuracy', top1.avg, epoch + 1)
-    writer.add_scalar('test/top5Accuracy', top5.avg, epoch + 1)
+    writer.add_scalar('val/loss', losses.avg, epoch + 1)
+    writer.add_scalar('val/top1Accuracy', top1.avg, epoch + 1)
+    writer.add_scalar('val/top5Accuracy', top5.avg, epoch + 1)
     log.write(output + ' ' + output_best + '\n')
     log.flush()
 

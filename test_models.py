@@ -199,7 +199,7 @@ with torch.no_grad():
         prec1, prec5 = accuracy(torch.from_numpy(rst[1]).cuda(), label.cuda(), topk=(1, 5))
         top1.update(prec1, 1)
         top5.update(prec5, 1)
-        print('video {} done, total {}/{}, average {:.3f} sec/video, moving Prec@1 {:.3f} Prec@5 {:.3f}'.format(i, i+1,
+        print('video {} done, total {}/{}, average {:.3f} sec/video, moving Acc@1 {:.3f} Acc@5 {:.3f}'.format(i, i+1,
                                                                         total_num,
                                                                         float(cnt_time) / (i+1), top1.avg, top5.avg))
 
@@ -210,7 +210,7 @@ cls_hit = np.diag(cf)
 cls_acc = cls_hit / cls_cnt
 print('-----Evaluation of {} is finished------'.format(args.weights))
 print('Class Accuracy {:.02f}%'.format(np.mean(cls_acc) * 100))
-print('Overall Prec@1 {:.02f}% Prec@5 {:.02f}%'.format(top1.avg, top5.avg))
+print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
 
 if args.save_scores:
