@@ -27,16 +27,8 @@ parser.add_argument('--dataset_path_depth', type=str, default='./dataset_depth')
 
 parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
-
-parser.add_argument('--weight_rgb', type=float, default=0.5)
+#parser.add_argument('--weight_rgb', type=float, default=0.5)
 #parser.add_argument('--hard_voting', default=False, action="store_true")
-
-#parser.add_argument('--test_segments_rgb', type=int, default=8)
-#parser.add_argument('--test_segments_depth', type=int, default=32)
-
-
-#parser.add_argument('--split', type=str, default="val")
-#parser.add_argument('--arch', type=str, default="bninception")
 parser.add_argument('--save_scores', default=False, action="store_true")
 parser.add_argument('--test_crops', type=int, default=1)
 parser.add_argument('--max_num', type=int, default=-1)
@@ -306,17 +298,6 @@ def eval_video(video_data, model):
 
     return i, rst, label
 
-"""
-# RGB
-data_gen_rgb = enumerate(data_loader_rgb)
-total_num_rgb = len(data_loader_rgb.dataset)
-# DEPTH
-data_gen_depth = enumerate(data_loader_depth)
-total_num_depth = len(data_loader_depth.dataset)
-
-print('total_num_rgb: ' + str(total_num_rgb) + ' ' + 'total_num_depth: ' + str(total_num_depth))
-"""
-
 data_gen_rgb_list = [enumerate(data_loader_rgb) for data_loader_rgb in data_loader_rgb_list]
 data_gen_depth_list = [enumerate(data_loader_depth) for data_loader_depth in data_loader_depth_list]
 total_num_rgb = len(data_loader_rgb[0].dataset) # all have the same len
@@ -341,9 +322,7 @@ with torch.no_grad():
             rst_rgb = eval_video((i, data_rgb, label_rgb), net_rgb)
             rst_depth = eval_video((j, data_depth, label_depth), net_depth)
 
-
             rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
-            
 
             video_labels[j] = rst_rgb[2]
 
@@ -351,9 +330,8 @@ with torch.no_grad():
             ensemble_scores[j] += rst_avg
             num_preds += 1.0
 
-            temp = rst_rgb + rst_depth
+            temp = rst_rgb[1] + rst_depth[1]
             total_scores[j] += temp
-
 
             prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), label_rgb.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
