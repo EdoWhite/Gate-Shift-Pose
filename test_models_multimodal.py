@@ -262,7 +262,7 @@ with torch.no_grad():
         prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), label_rgb.cuda(), topk=(1, 5))
         top1.update(prec1, 1)
         top5.update(prec5, 1)
-        print('video {} done, total {}/{}, average {:.3f} sec/video, moving Prec@1 {:.3f} Prec@5 {:.3f}'.format(i, i+1,
+        print('video {} done, total {}/{}, average {:.3f} sec/video, moving Acc@1 {:.3f} Acc@5 {:.3f}'.format(i, i+1,
                                                                         total_num_rgb,
                                                                         float(cnt_time) / (i+1), top1.avg, top5.avg))
 
