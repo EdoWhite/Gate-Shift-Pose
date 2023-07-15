@@ -29,10 +29,10 @@ parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
 
 parser.add_argument('--weight_rgb', type=float, default=0.5)
-parser.add_argument('--hard_voting', default=False, action="store_true")
+#parser.add_argument('--hard_voting', default=False, action="store_true")
 
-parser.add_argument('--test_segments_rgb', type=int, default=8)
-parser.add_argument('--test_segments_depth', type=int, default=32)
+#parser.add_argument('--test_segments_rgb', type=int, default=8)
+#parser.add_argument('--test_segments_depth', type=int, default=32)
 
 
 #parser.add_argument('--split', type=str, default="val")
@@ -106,13 +106,13 @@ depth_models = []
 
 with open(args.rgb_models, 'r') as file:
     for line in file:
-        model, backbone = line.split(" ")
-        rgb_models.append((model, backbone))
+        model, backbone, num_segments = line.split(" ")
+        rgb_models.append((model, backbone, num_segments))
 
 with open(args.depth_models, 'r') as file:
     for line in file:
-        model, backbone = line.split(" ")
-        depth_models.append((model, backbone))
+        model, backbone, num_segments = line.split(" ")
+        depth_models.append((model, backbone, num_segments))
 
 
 # CREATE NETS and DATALOADERS
@@ -124,7 +124,7 @@ data_loader_depth_list = []
 
 for rgb_model, depth_model in zip(rgb_models, depth_models):
     # RGB
-    net_rgb = VideoModel(num_class=num_class, num_segments=args.test_segments_rgb, base_model=rgb_model[1],
+    net_rgb = VideoModel(num_class=num_class, num_segments=rgb_model[2], base_model=rgb_model[1],
                     consensus_type=args.crop_fusion_type, gsf=args.gsf, gsf_ch_ratio = args.gsf_ch_ratio)
     
     checkpoint_rgb = torch.load(rgb_model[0])
@@ -133,7 +133,7 @@ for rgb_model, depth_model in zip(rgb_models, depth_models):
     net_rgb_list.append(net_rgb)
 
     # DEPTH
-    net_depth = VideoModel(num_class=num_class, num_segments=args.test_segments_depth, base_model=depth_model[1],
+    net_depth = VideoModel(num_class=num_class, num_segments=depth_model[2], base_model=depth_model[1],
                     consensus_type=args.crop_fusion_type, gsf=args.gsf, gsf_ch_ratio = args.gsf_ch_ratio)
     
     checkpoint_depth = torch.load(depth_model[0])
@@ -187,7 +187,7 @@ for rgb_model, depth_model in zip(rgb_models, depth_models):
             VideoDataset(
                 args.root_path_rgb,
                 args.test_list,
-                num_segments=args.test_segments_rgb,
+                num_segments=rgb_model[2],
                 image_tmpl=args.rgb_prefix + rgb_read_format,
                 test_mode=True,
                 transform=torchvision.transforms.Compose([
@@ -211,7 +211,7 @@ for rgb_model, depth_model in zip(rgb_models, depth_models):
             VideoDataset(
                 args.root_path_depth,
                 args.test_list,
-                num_segments=args.test_segments_depth,
+                num_segments=depth_model[2],
                 image_tmpl=args.rgb_prefix + rgb_read_format,
                 test_mode=True,
                 transform=torchvision.transforms.Compose([
@@ -373,12 +373,12 @@ cf = confusion_matrix(video_labels, video_pred).astype(float)
 cls_cnt = cf.sum(axis=1)
 cls_hit = np.diag(cf)
 cls_acc = cls_hit / cls_cnt
-print('-----Evaluation of {} and {} is finished------'.format(args.checkpoint_rgb, args.checkpoint_depth))
+print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
 print('Class Accuracy {:.02f}%'.format(np.mean(cls_acc) * 100))
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
 total1, total5 = accuracy(torch.from_numpy(total_avg_scores).cuda(), video_labels.cuda(), topk=(1, 5))
-print('Total Average Acc@1 {:.02f}% Acc@5 {:.02f}%'.format())
+print('Total Average Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(total1, total5))
 
 
 if args.save_scores:

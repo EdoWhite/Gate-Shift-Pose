@@ -1,0 +1,2 @@
+experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 32
+experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 32
