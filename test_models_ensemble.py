@@ -366,7 +366,7 @@ with torch.no_grad():
 ensemble_scores /= num_preds
 output_scores = ensemble_scores
 
-total_scores /= (num_preds*2.0)
+total_avg_scores = total_scores / (num_preds * 2.0)
 
 video_pred = [np.argmax(x) for x in output_scores]
 cf = confusion_matrix(video_labels, video_pred).astype(float)
@@ -377,9 +377,8 @@ print('-----Evaluation of {} and {} is finished------'.format(args.checkpoint_rg
 print('Class Accuracy {:.02f}%'.format(np.mean(cls_acc) * 100))
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
-
-total1, total5 = accuracy(torch.from_numpy(total_scores).cuda(), video_labels.cuda(), topk=(1, 5))
-print('Total Acc@1 {:.02f}% Acc@5 {:.02f}%'.format())
+total1, total5 = accuracy(torch.from_numpy(total_avg_scores).cuda(), video_labels.cuda(), topk=(1, 5))
+print('Total Average Acc@1 {:.02f}% Acc@5 {:.02f}%'.format())
 
 
 if args.save_scores:
