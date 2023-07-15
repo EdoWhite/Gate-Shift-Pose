@@ -27,7 +27,7 @@ parser.add_argument('--dataset_path_depth', type=str, default='./dataset_depth')
 
 parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
-#parser.add_argument('--weight_rgb', type=float, default=0.5)
+parser.add_argument('--weight_rgb', type=float, default=0.5)
 #parser.add_argument('--hard_voting', default=False, action="store_true")
 parser.add_argument('--save_scores', default=False, action="store_true")
 parser.add_argument('--test_crops', type=int, default=1)
@@ -99,12 +99,12 @@ depth_models = []
 with open(args.rgb_models, 'r') as file:
     for line in file:
         model, backbone, num_segments = line.split(" ")
-        rgb_models.append((model, backbone, num_segments))
+        rgb_models.append((model, backbone, int(num_segments)))
 
 with open(args.depth_models, 'r') as file:
     for line in file:
         model, backbone, num_segments = line.split(" ")
-        depth_models.append((model, backbone, num_segments))
+        depth_models.append((model, backbone, int(num_segments)))
 
 
 # CREATE NETS and DATALOADERS
@@ -298,9 +298,9 @@ def eval_video(video_data, model):
 
     return i, rst, label
 
-data_gen_rgb_list = [enumerate(data_loader_rgb) for data_loader_rgb in data_loader_rgb_list]
-data_gen_depth_list = [enumerate(data_loader_depth) for data_loader_depth in data_loader_depth_list]
-total_num_rgb = len(data_loader_rgb[0].dataset) # all have the same len
+#data_gen_rgb_list = [enumerate(data_loader_rgb) for data_loader_rgb in data_loader_rgb_list]
+#data_gen_depth_list = [enumerate(data_loader_depth) for data_loader_depth in data_loader_depth_list]
+total_num_rgb = len(data_loader_rgb_list[0].dataset) # all have the same len
 
 proc_start_time = time.time()
 
@@ -314,24 +314,26 @@ top5 = AverageMeter()
 
 weight_depth = 1 - args.weight_rgb        
 
+# fix that ensemble_scores and total_scores reset each time new models are tested!
 with torch.no_grad():
-    for i, (data_gen_rgb, data_gen_depth, net_rgb, net_depth) in zip(data_gen_rgb_list, data_gen_depth_list, net_rgb_list, net_depth_list):
-
+    for data_gen_rgb, data_gen_depth, net_rgb, net_depth in zip(data_loader_rgb_list, data_loader_depth_list, net_rgb_list, net_depth_list):
+        data_gen_rgb = enumerate(data_gen_rgb)
+        data_gen_depth = enumerate(data_gen_depth)
         for (j, (data_rgb, label_rgb)), (k, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
 
-            rst_rgb = eval_video((i, data_rgb, label_rgb), net_rgb)
-            rst_depth = eval_video((j, data_depth, label_depth), net_depth)
+            rst_rgb = eval_video((j, data_rgb, label_rgb), net_rgb)
+            rst_depth = eval_video((k, data_depth, label_depth), net_depth)
 
             rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
 
             video_labels[j] = rst_rgb[2]
 
             cnt_time = time.time() - proc_start_time
-            ensemble_scores[j] += rst_avg
+            ensemble_scores[j] = ensemble_scores[j] + rst_avg
             num_preds += 1.0
 
             temp = rst_rgb[1] + rst_depth[1]
-            total_scores[j] += temp
+            total_scores[j] = total_scores[j] + temp
 
             prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), label_rgb.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
@@ -341,7 +343,7 @@ with torch.no_grad():
                                                                             float(cnt_time) / (j+1), top1.avg, top5.avg))
 
 
-ensemble_scores /= num_preds
+ensemble_scores = ensemble_scores / num_preds
 output_scores = ensemble_scores
 
 total_avg_scores = total_scores / (num_preds * 2.0)
