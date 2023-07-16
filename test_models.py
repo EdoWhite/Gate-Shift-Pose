@@ -5,7 +5,7 @@ from torch.cuda import amp
 import numpy as np
 import torch.nn.parallel
 import torch.optim
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
 from utils.dataset import VideoDataset
 from models import VideoModel
 from utils.transforms import *
@@ -211,6 +211,9 @@ cls_acc = cls_hit / cls_cnt
 print('-----Evaluation of {} is finished------'.format(args.weights))
 print('Class Accuracy {:.02f}%'.format(np.mean(cls_acc) * 100))
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
+
+acc = accuracy_score(video_labels, video_pred)
+print('Class Accuracy SKlearn {:.02f}%'.format(acc * 100))
 
 
 if args.save_scores:
