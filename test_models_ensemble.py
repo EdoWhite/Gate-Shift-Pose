@@ -361,16 +361,8 @@ with torch.no_grad():
         total_scores.append(partial_depth_score)
 
 
-#ensemble_scores = ensemble_scores / num_preds
-#output_scores = ensemble_scores
-
-#total_avg_scores = total_scores / (num_preds * 2.0)
-
 total_avg_scores = np.mean(np.array(total_scores), axis=0)
 ensemble_scores = np.mean(np.array(ensemble_scores), axis=0)
-
-print("OUTPUT SCORES:")
-print(total_avg_scores)
 
 video_pred = [np.argmax(x) for x in total_avg_scores]
 print("video labels:")
@@ -379,19 +371,14 @@ print("video preds:")
 print(video_pred)
 
 
-cf = confusion_matrix(video_labels, video_pred).astype(float)
-cls_cnt = cf.sum(axis=1)
-cls_hit = np.diag(cf)
-cls_acc = cls_hit / cls_cnt
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
-print('Class Accuracy {:.02f}%'.format(np.mean(cls_acc) * 100))
 
+# Compute the overall accuracy
 acc = accuracy_score(video_labels, video_pred)
-print('Class Accuracy SKlearn {:.02f}%'.format(acc * 100))
-
+print('Overall Accuracy SKlearn {:.02f}%'.format(acc * 100))
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
-#total1, total5 = accuracy(torch.from_numpy(total_avg_scores).cuda(), video_labels, topk=(1, 5))
+#total1, total5 = accuracy(torch.from_numpy(total_avg_scores).cuda(), torch.from_numpy(video_labels), topk=(1, 5))
 
 accuracy_1 = Accuracy(task="multiclass", num_classes=61, top_k=1).cuda()
 accuracy_5 = Accuracy(task="multiclass", num_classes=61, top_k=5).cuda()
