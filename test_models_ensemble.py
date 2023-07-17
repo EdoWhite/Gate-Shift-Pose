@@ -342,14 +342,18 @@ with torch.no_grad():
             #total_scores[j] = total_scores[j] + temp
             #total_scores.append(temp)
 
-            partial_rgb_score.append(rst_rgb[1])
-            partial_depth_score.append(rst_depth[1])
+            #partial_rgb_score.append(rst_rgb[1])
+            #partial_depth_score.append(rst_depth[1])
 
+            partial_rgb_score.append(rst_avg)
+            print("PARTIAL AVG SCORE:")
+            print(partial_rgb_score)
+            """
             prec1, prec5 = accuracy(torch.from_numpy(rst_rgb[1]).cuda(), label_rgb.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
             top5.update(prec5, 1)
-
-            prec1, prec5 = accuracy(torch.from_numpy(rst_depth[1]).cuda(), label_depth.cuda(), topk=(1, 5))
+            """
+            prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), label_depth.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
             top5.update(prec5, 1)
 
@@ -358,11 +362,16 @@ with torch.no_grad():
                                                                             total_num_rgb,
                                                                             float(cnt_time) / (j+1), top1.avg, top5.avg))
         total_scores.append(partial_rgb_score)
-        total_scores.append(partial_depth_score)
+        #total_scores.append(partial_depth_score)
 
+print("TOTAL SCORES:")
+print(total_scores)
 
 total_avg_scores = np.mean(np.array(total_scores), axis=0)
 ensemble_scores = np.mean(np.array(ensemble_scores), axis=0)
+
+print("TOTAL AVG SCORES:")
+print(total_avg_scores)
 
 video_pred = [np.argmax(x) for x in total_avg_scores]
 print("video labels:")

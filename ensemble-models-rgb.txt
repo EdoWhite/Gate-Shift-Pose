@@ -1,5 +1,2 @@
 experiments/meccano/inceptionv3/meccano-RGB-120epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 32
 experiments/meccano/inceptionv3/meccano-RGB-120epochs-24Seg/meccano_inceptionv3_segment24_checkpoint.pth.tar inceptionv3 24
-experiments/meccano/inceptionv3/meccano-RGB-60epochs-8Seg/meccano_inceptionv3_segment8_checkpoint.pth.tar inceptionv3 8
-experiments/meccano/inceptionv3/meccano-RGB-feature-extraction-16Seg/meccano_inceptionv3_segment16_checkpoint.pth.tar inceptionv3 16
-experiments/meccano/inceptionv3/meccano-RGB-finetune-SSV1-16Seg/meccano_inceptionv3_segment16_checkpoint.pth.tar inceptionv3 16

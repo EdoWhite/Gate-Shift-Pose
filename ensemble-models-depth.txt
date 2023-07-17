@@ -1,5 +1,2 @@
 experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 8
 experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 12
-experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 16
-experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 24
-experiments/meccano/inceptionv3/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_checkpoint.pth.tar inceptionv3 32
