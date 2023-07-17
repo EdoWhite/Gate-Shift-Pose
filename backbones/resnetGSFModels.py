@@ -193,7 +193,7 @@ class ResNet(nn.Module):
 
 def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
 
-    model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio **kwargs)
+    model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
 
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch],
