@@ -5,7 +5,6 @@ from torch.cuda import amp
 import numpy as np
 import torch.nn.parallel
 import torch.optim
-from torchmetrics import Accuracy
 from sklearn.metrics import confusion_matrix, accuracy_score, top_k_accuracy_score
 from utils.dataset import VideoDataset
 from models import VideoModel
@@ -364,16 +363,16 @@ print(total_scores)
 print("TOTAL SCORES PAIRS:")
 print(total_avg_scores)
 
-total_avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
+avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
 
 print("TOTAL AVG SCORES PAIRS:")
-print(total_avg_scores)
+print(avg_scores)
 
 print("TOTAL AVG SCORES:")
 print(ensemble_scores)
 
-video_pred_avg = [np.argmax(x) for x in total_avg_scores]
+video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
 
 print("video labels:")
@@ -388,7 +387,7 @@ print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, a
 
 # Compute the overall accuracy averaging each pair of models
 acc_1_avg = accuracy_score(video_labels, video_pred_avg)
-acc_5_avg = top_k_accuracy_score(video_labels, total_avg_scores, k=5, labels=[x for x in range(61)])
+acc_5_avg = top_k_accuracy_score(video_labels, avg_scores, k=5, labels=[x for x in range(61)])
 
 # Compute the overall accuracy averaging each model independently
 acc_1 = accuracy_score(video_labels, video_pred)
@@ -397,17 +396,6 @@ acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
-
-
-"""
-accuracy_1 = Accuracy(task="multiclass", num_classes=61, top_k=1).cuda()
-accuracy_5 = Accuracy(task="multiclass", num_classes=61, top_k=5).cuda()
-
-total1 = accuracy_1(torch.from_numpy(total_avg_scores).cuda(), torch.from_numpy(video_labels).cuda())
-total5 = accuracy_5(torch.from_numpy(total_avg_scores).cuda(), torch.from_numpy(video_labels).cuda())
-
-print('Total Average Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(total1, total5))
-"""
 
 if args.save_scores:
     save_name = args.checkpoint_rgb[:-8] + args.checkpoint_depth[:-8] + '_clips_' + str(args.num_clips) + '_crops_' + str(args.test_crops) + '.pkl'
