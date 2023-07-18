@@ -6,7 +6,7 @@ import numpy as np
 import torch.nn.parallel
 import torch.optim
 from torchmetrics import Accuracy
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import confusion_matrix, accuracy_score, top_k_accuracy_score
 from utils.dataset import VideoDataset
 from models import VideoModel
 from utils.transforms import *
@@ -307,24 +307,25 @@ proc_start_time = time.time()
 
 #ensemble_scores = np.zeros((total_num_rgb, num_class))
 #total_scores = np.zeros((total_num_rgb, num_class))
-ensemble_scores = []
 total_scores = []
+total_avg_scores = []
 
-num_preds = 0
 video_labels = np.zeros(total_num_rgb)
 top1 = AverageMeter()
 top5 = AverageMeter()
 
 weight_depth = 1 - args.weight_rgb        
 
-# fix that ensemble_scores and total_scores reset each time new models are tested!
 with torch.no_grad():
     for data_gen_rgb, data_gen_depth, net_rgb, net_depth in zip(data_loader_rgb_list, data_loader_depth_list, net_rgb_list, net_depth_list):
         data_gen_rgb = enumerate(data_gen_rgb)
         data_gen_depth = enumerate(data_gen_depth)
         partial_rgb_score = []
         partial_depth_score = []
+        partial_avg_scores = []
         for (j, (data_rgb, label_rgb)), (k, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
+
+            cnt_time = time.time() - proc_start_time
 
             rst_rgb = eval_video((j, data_rgb, label_rgb), net_rgb)
             rst_depth = eval_video((k, data_depth, label_depth), net_depth)
@@ -333,19 +334,10 @@ with torch.no_grad():
 
             video_labels[j] = rst_rgb[2]
 
-            cnt_time = time.time() - proc_start_time
-            #ensemble_scores[j] = ensemble_scores[j] + rst_avg
-            ensemble_scores.append(rst_avg)
-            num_preds += 1.0
+            partial_rgb_score.append(rst_rgb[1])
+            partial_depth_score.append(rst_depth[1])
+            partial_avg_scores.append(rst_avg)
 
-            temp = rst_rgb[1] + rst_depth[1]
-            #total_scores[j] = total_scores[j] + temp
-            #total_scores.append(temp)
-
-            #partial_rgb_score.append(rst_rgb[1])
-            #partial_depth_score.append(rst_depth[1])
-
-            partial_rgb_score.append(rst_avg)
             print("PARTIAL AVG SCORE:")
             print(partial_rgb_score)
             """
@@ -361,34 +353,53 @@ with torch.no_grad():
             print('video {} done, total {}/{}, average {:.3f} sec/video, moving Acc@1 {:.3f} Acc@5 {:.3f}'.format(j, j+1,
                                                                             total_num_rgb,
                                                                             float(cnt_time) / (j+1), top1.avg, top5.avg))
+            
+        total_avg_scores.append(partial_avg_scores)
         total_scores.append(partial_rgb_score)
-        #total_scores.append(partial_depth_score)
+        total_scores.append(partial_depth_score)
 
 print("TOTAL SCORES:")
 print(total_scores)
 
-total_avg_scores = np.mean(np.array(total_scores), axis=0)
-ensemble_scores = np.mean(np.array(ensemble_scores), axis=0)
-
-print("TOTAL AVG SCORES:")
+print("TOTAL SCORES PAIRS:")
 print(total_avg_scores)
 
-video_pred = [np.argmax(x) for x in total_avg_scores]
+total_avg_scores = np.mean(np.array(total_avg_scores), axis=0)
+ensemble_scores = np.mean(np.array(total_scores), axis=0)
+
+print("TOTAL AVG SCORES PAIRS:")
+print(total_avg_scores)
+
+print("TOTAL AVG SCORES:")
+print(ensemble_scores)
+
+video_pred_avg = [np.argmax(x) for x in total_avg_scores]
+video_pred = [np.argmax(x) for x in ensemble_scores]
+
 print("video labels:")
 print(video_labels)
+print("video preds avg:")
+print(video_pred_avg)
 print("video preds:")
 print(video_pred)
 
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
 
-# Compute the overall accuracy
-acc = accuracy_score(video_labels, video_pred)
-print('Overall Accuracy SKlearn {:.02f}%'.format(acc * 100))
+# Compute the overall accuracy averaging each pair of models
+acc_1_avg = accuracy_score(video_labels, video_pred_avg)
+acc_5_avg = top_k_accuracy_score(video_labels, total_avg_scores, k=5, labels=[x for x in range(60)])
+
+# Compute the overall accuracy averaging each model independently
+acc_1 = accuracy_score(video_labels, video_pred)
+acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x in range(60)])
+
+print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
+print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
-#total1, total5 = accuracy(torch.from_numpy(total_avg_scores).cuda(), torch.from_numpy(video_labels), topk=(1, 5))
 
+"""
 accuracy_1 = Accuracy(task="multiclass", num_classes=61, top_k=1).cuda()
 accuracy_5 = Accuracy(task="multiclass", num_classes=61, top_k=5).cuda()
 
@@ -396,7 +407,7 @@ total1 = accuracy_1(torch.from_numpy(total_avg_scores).cuda(), torch.from_numpy(
 total5 = accuracy_5(torch.from_numpy(total_avg_scores).cuda(), torch.from_numpy(video_labels).cuda())
 
 print('Total Average Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(total1, total5))
-
+"""
 
 if args.save_scores:
     save_name = args.checkpoint_rgb[:-8] + args.checkpoint_depth[:-8] + '_clips_' + str(args.num_clips) + '_crops_' + str(args.test_crops) + '.pkl'
