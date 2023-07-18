@@ -388,11 +388,11 @@ print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, a
 
 # Compute the overall accuracy averaging each pair of models
 acc_1_avg = accuracy_score(video_labels, video_pred_avg)
-acc_5_avg = top_k_accuracy_score(video_labels, total_avg_scores, k=5, labels=[x for x in range(60)])
+acc_5_avg = top_k_accuracy_score(video_labels, total_avg_scores, k=5, labels=[x for x in range(61)])
 
 # Compute the overall accuracy averaging each model independently
 acc_1 = accuracy_score(video_labels, video_pred)
-acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x in range(60)])
+acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x in range(61)])
 
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
