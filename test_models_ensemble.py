@@ -364,8 +364,8 @@ print(total_scores)
 print("TOTAL SCORES PAIRS:")
 print(total_avg_scores)
 
-total_avg_scores = np.mean(np.array(total_avg_scores), axis=0)
-ensemble_scores = np.mean(np.array(total_scores), axis=0)
+total_avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
+ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
 
 print("TOTAL AVG SCORES PAIRS:")
 print(total_avg_scores)
