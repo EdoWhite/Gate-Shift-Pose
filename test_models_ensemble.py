@@ -3,6 +3,7 @@ import time
 import torchvision
 from torch.cuda import amp
 import numpy as np
+from scipy import stats as st
 import torch.nn.parallel
 import torch.optim
 from sklearn.metrics import confusion_matrix, accuracy_score, top_k_accuracy_score
@@ -357,39 +358,43 @@ with torch.no_grad():
         total_scores.append(partial_rgb_score)
         total_scores.append(partial_depth_score)
 
-print("TOTAL SCORES:") #(4, 20, 1, 61)
-print(total_scores)
-print("###############################################\n\n")
-print("TOTAL SCORES DIM:")
+print("TOTAL SCORES:") #(4, 20, 1, 61) --> (4, 20, 61)
 print(np.squeeze(np.array(total_scores)).shape)
 print("###############################################\n\n")
 
-print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61)
-print(total_avg_scores)
-print("###############################################\n\n")
-print("TOTAL SCORES PAIRS DIM:")
+print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61) --> (2, 20, 61)
 print(np.squeeze(np.array(total_avg_scores)).shape)
 print("###############################################\n\n")
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
 
-print("TOTAL AVG SCORES PAIRS:")
-print(avg_scores) #(20, 61)
-print("###############################################\n\n")
-print("TOTAL AVG SCORES PAIRS DIM:")
+a = np.squeeze(st.mode(np.array(total_avg_scores), axis=0))[0]
+b = np.squeeze(st.mode(np.array(total_scores), axis=0))[0]
+
+print("TOTAL AVG SCORES PAIRS:") #(20, 61)
 print(avg_scores.shape)
 print("###############################################\n\n")
 
 print("TOTAL AVG SCORES:") #(20, 61)
-print(ensemble_scores)
-print("###############################################\n\n")
-print("TOTAL AVG SCORES:")
 print(ensemble_scores.shape)
 print("###############################################\n\n")
 
+
+print("HARD VOTING PAIRS:") #(20, 61)
+print(a.shape)
+print("###############################################\n\n")
+
+print("HARD VOTING:") #(20, 61)
+print(b.shape)
+print("###############################################\n\n")
+
+
 video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
+
+video_pred_hv_avg = [np.argmax(x) for x in a]
+video_pred_hv = [np.argmax(x) for x in b]
 
 print("video labels:")
 print(video_labels)
@@ -397,6 +402,11 @@ print("video preds avg:")
 print(video_pred_avg)
 print("video preds:")
 print(video_pred)
+
+print("video preds HV avg:")
+print(video_pred_hv_avg)
+print("video preds HV:")
+print(video_pred_hv)
 
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
@@ -409,8 +419,22 @@ acc_5_avg = top_k_accuracy_score(video_labels, avg_scores, k=5, labels=[x for x 
 acc_1 = accuracy_score(video_labels, video_pred)
 acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x in range(61)])
 
+
+# Compute the overall accuracy Hard Voting pairs of models
+acc_1_hv_avg = accuracy_score(video_labels, video_pred_hv_avg)
+acc_5_hv_avg = top_k_accuracy_score(video_labels, a, k=5, labels=[x for x in range(61)])
+
+# Compute the overall accuracy Hard Voting each model independently
+acc_1_hv = accuracy_score(video_labels, video_pred_hv)
+acc_5_hv = top_k_accuracy_score(video_labels, b, k=5, labels=[x for x in range(61)])
+
+
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
-print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
+print('Overall SKlearn Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
+
+print('Overall SKlearn HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_1_hv_avg * 100))
+print('Overall SKlearn HV Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv * 100, acc_1_hv * 100))
+
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
 if args.save_scores:
