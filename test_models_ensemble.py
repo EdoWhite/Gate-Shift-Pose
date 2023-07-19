@@ -359,18 +359,34 @@ with torch.no_grad():
 
 print("TOTAL SCORES:")
 print(total_scores)
+print("###############################################\n\n")
+print("TOTAL SCORES DIM:")
+print(np.array(total_scores).shape)
+print("###############################################\n\n")
 
 print("TOTAL SCORES PAIRS:")
 print(total_avg_scores)
+print("###############################################\n\n")
+print("TOTAL SCORES PAIRS DIM:")
+print(np.array(total_avg_scores).shape)
+print("###############################################\n\n")
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
 
 print("TOTAL AVG SCORES PAIRS:")
 print(avg_scores)
+print("###############################################\n\n")
+print("TOTAL AVG SCORES PAIRS DIM:")
+print(avg_scores.shape)
+print("###############################################\n\n")
 
 print("TOTAL AVG SCORES:")
 print(ensemble_scores)
+print("###############################################\n\n")
+print("TOTAL AVG SCORES:")
+print(ensemble_scores.shape)
+print("###############################################\n\n")
 
 video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
