@@ -341,9 +341,7 @@ with torch.no_grad():
             partial_depth_score.append(rst_depth[1])
             partial_avg_scores.append(rst_avg)
             partial_gmean_scores.append(rst_gmean)
-
-            print("PARTIAL AVG SCORE:")
-            print(partial_rgb_score)
+            
             """
             prec1, prec5 = accuracy(torch.from_numpy(rst_rgb[1]).cuda(), label_rgb.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
