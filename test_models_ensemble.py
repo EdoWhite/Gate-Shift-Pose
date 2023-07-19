@@ -377,7 +377,7 @@ print("###############################################\n\n")
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
-gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axes=0))
+gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axis=0))
 
 HV_avg_scores = np.squeeze(st.mode(total_avg_scores, axis=0, keepdim = False))[0]
 HV_scores = np.squeeze(st.mode(total_scores, axis=0, keepdim = False))[0]
