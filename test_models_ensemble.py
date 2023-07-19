@@ -341,7 +341,7 @@ with torch.no_grad():
             partial_depth_score.append(rst_depth[1])
             partial_avg_scores.append(rst_avg)
             partial_gmean_scores.append(rst_gmean)
-            
+
             """
             prec1, prec5 = accuracy(torch.from_numpy(rst_rgb[1]).cuda(), label_rgb.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
@@ -375,6 +375,7 @@ print("###############################################\n\n")
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
+ensemble_scores_gmean = np.squeeze(st.gmean(np.array(total_scores), axis=0))
 gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axis=0))
 
 HV_avg_scores = np.squeeze(st.mode(total_avg_scores, axis=0, keepdims = False))[0]
@@ -410,6 +411,7 @@ print("###############################################\n\n")
 video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
 video_pred_gmean = [np.argmax(x) for x in gmean_scores]
+video_pred_ens_gmean = [np.argmax(x) for x in ensemble_scores_gmean]
 
 video_pred_hv_avg = [np.argmax(x) for x in HV_avg_scores]
 video_pred_hv = [np.argmax(x) for x in HV_scores]
@@ -447,6 +449,9 @@ acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x
 acc_1_gmean = accuracy_score(video_labels, video_pred_gmean)
 acc_5_gmean = top_k_accuracy_score(video_labels, gmean_scores, k=5, labels=[x for x in range(61)])
 
+# # Compute the overall accuracy with gmean over each model independently
+acc_1_ens_gmean = accuracy_score(video_labels, video_pred_ens_gmean)
+acc_5_ens_gmean = top_k_accuracy_score(video_labels, ensemble_scores_gmean, k=5, labels=[x for x in range(61)])
 
 # Compute the overall accuracy Hard Voting pairs of models
 acc_1_hv_avg = accuracy_score(video_labels, video_pred_hv_avg)
@@ -463,13 +468,16 @@ acc_5_hv_gmean = top_k_accuracy_score(video_labels, HV_gmean_scores, k=5, labels
 
 
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
+print('Overall SKlearn gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_ens_gmean * 100, acc_5_ens_gmean * 100))
+print("\n")
+
 print('Overall SKlearn Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
-print('Overall SKlearn Pairs gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_gmean * 100, acc_5_gmean * 100))
+print('Overall SKlearn Pairs (gmean) Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_gmean * 100, acc_5_gmean * 100))
 print("\n")
 
 print('Overall SKlearn HV Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv * 100, acc_5_hv * 100))
 print('Overall SKlearn HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_5_hv_avg * 100))
-print('Overall SKlearn HV gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_gmean * 100, acc_5_hv_gmean * 100))
+print('Overall SKlearn HV Pairs (gmean) Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_gmean * 100, acc_5_hv_gmean * 100))
 print("\n")
 
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
