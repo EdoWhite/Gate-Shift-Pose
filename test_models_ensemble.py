@@ -379,9 +379,9 @@ avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
 gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axis=0))
 
-HV_avg_scores = np.squeeze(st.mode(total_avg_scores, axis=0, keepdim = False))[0]
-HV_scores = np.squeeze(st.mode(total_scores, axis=0, keepdim = False))[0]
-HV_gmean_scores = np.squeeze(st.mode(total_gmean_scores, axis=0, keepdim = False))[0]
+HV_avg_scores = np.squeeze(st.mode(total_avg_scores, axis=0, keepdims = False))[0]
+HV_scores = np.squeeze(st.mode(total_scores, axis=0, keepdims = False))[0]
+HV_gmean_scores = np.squeeze(st.mode(total_gmean_scores, axis=0, keepdims = False))[0]
 
 print("TOTAL AVG SCORES PAIRS:") #(20, 61)
 print(avg_scores.shape)
@@ -467,11 +467,12 @@ acc_5_hv_gmean = top_k_accuracy_score(video_labels, HV_gmean_scores, k=5, labels
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
 print('Overall SKlearn Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
 print('Overall SKlearn Pairs gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_gmean * 100, acc_5_gmean * 100))
+print("\n")
 
-print('Overall SKlearn HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_1_hv_avg * 100))
 print('Overall SKlearn HV Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv * 100, acc_1_hv * 100))
+print('Overall SKlearn HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_1_hv_avg * 100))
 print('Overall SKlearn HV gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_gmean * 100, acc_1_hv_gmean * 100))
-
+print("\n")
 
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
