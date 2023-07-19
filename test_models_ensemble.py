@@ -309,6 +309,7 @@ proc_start_time = time.time()
 #total_scores = np.zeros((total_num_rgb, num_class))
 total_scores = []
 total_avg_scores = []
+total_gmean_scores = []
 
 video_labels = np.zeros(total_num_rgb)
 top1 = AverageMeter()
@@ -323,6 +324,7 @@ with torch.no_grad():
         partial_rgb_score = []
         partial_depth_score = []
         partial_avg_scores = []
+        partial_gmean_scores = []
         for (j, (data_rgb, label_rgb)), (k, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
 
             cnt_time = time.time() - proc_start_time
@@ -331,12 +333,14 @@ with torch.no_grad():
             rst_depth = eval_video((k, data_depth, label_depth), net_depth)
 
             rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
+            rst_gmean = st.gmean(np.stack([rst_rgb[1], rst_depth[1]]), axis=0)
 
             video_labels[j] = rst_rgb[2]
 
             partial_rgb_score.append(rst_rgb[1])
             partial_depth_score.append(rst_depth[1])
             partial_avg_scores.append(rst_avg)
+            partial_gmean_scores.append(rst_gmean)
 
             print("PARTIAL AVG SCORE:")
             print(partial_rgb_score)
@@ -355,6 +359,7 @@ with torch.no_grad():
                                                                             float(cnt_time) / (j+1), top1.avg, top5.avg))
             
         total_avg_scores.append(partial_avg_scores)
+        total_gmean_scores.append(partial_gmean_scores)
         total_scores.append(partial_rgb_score)
         total_scores.append(partial_depth_score)
 
@@ -366,11 +371,17 @@ print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61) --> (2, 20, 61)
 print(np.squeeze(np.array(total_avg_scores)).shape)
 print("###############################################\n\n")
 
+print("TOTAL SCORES GMEAN:") #(2, 20, 1, 61) --> (2, 20, 61)
+print(np.squeeze(np.array(total_gmean_scores)).shape)
+print("###############################################\n\n")
+
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
+gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axes=0))
 
-HV_avg_scores = np.squeeze(st.mode(np.array(total_avg_scores), axis=0, keepdim = False))[0]
-HV_scores = np.squeeze(st.mode(np.array(total_scores), axis=0, keepdim = False))[0]
+HV_avg_scores = np.squeeze(st.mode(total_avg_scores, axis=0, keepdim = False))[0]
+HV_scores = np.squeeze(st.mode(total_scores, axis=0, keepdim = False))[0]
+HV_gmean_scores = np.squeeze(st.mode(total_gmean_scores, axis=0, keepdim = False))[0]
 
 print("TOTAL AVG SCORES PAIRS:") #(20, 61)
 print(avg_scores.shape)
@@ -378,6 +389,10 @@ print("###############################################\n\n")
 
 print("TOTAL AVG SCORES:") #(20, 61)
 print(ensemble_scores.shape)
+print("###############################################\n\n")
+
+print("TOTAL GMEAN SCORES:") #(20, 61)
+print(gmean_scores.shape)
 print("###############################################\n\n")
 
 
@@ -389,24 +404,35 @@ print("HARD VOTING:") #(20, 61)
 print(HV_scores.shape)
 print("###############################################\n\n")
 
+print("HARD VOTING GMEAN:") #(20, 61)
+print(HV_gmean_scores.shape)
+print("###############################################\n\n")
+
 
 video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
+video_pred_gmean = [np.argmax(x) for x in gmean_scores]
 
 video_pred_hv_avg = [np.argmax(x) for x in HV_avg_scores]
 video_pred_hv = [np.argmax(x) for x in HV_scores]
+video_pred_hv_gmean = [np.argmax(x) for x in HV_gmean_scores]
 
 print("video labels:")
 print(video_labels)
+
 print("video preds avg:")
 print(video_pred_avg)
 print("video preds:")
 print(video_pred)
+print("video preds gmean:")
+print(video_pred_gmean)
 
 print("video preds HV avg:")
 print(video_pred_hv_avg)
 print("video preds HV:")
 print(video_pred_hv)
+print("video preds HV gmean:")
+print(video_pred_hv_gmean)
 
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
@@ -419,6 +445,10 @@ acc_5_avg = top_k_accuracy_score(video_labels, avg_scores, k=5, labels=[x for x 
 acc_1 = accuracy_score(video_labels, video_pred)
 acc_5 = top_k_accuracy_score(video_labels, ensemble_scores, k=5, labels=[x for x in range(61)])
 
+# Compute the overall accuracy with gmean over each pair of models
+acc_1_gmean = accuracy_score(video_labels, video_pred_gmean)
+acc_5_gmean = top_k_accuracy_score(video_labels, gmean_scores, k=5, labels=[x for x in range(61)])
+
 
 # Compute the overall accuracy Hard Voting pairs of models
 acc_1_hv_avg = accuracy_score(video_labels, video_pred_hv_avg)
@@ -428,12 +458,20 @@ acc_5_hv_avg = top_k_accuracy_score(video_labels, HV_avg_scores, k=5, labels=[x 
 acc_1_hv = accuracy_score(video_labels, video_pred_hv)
 acc_5_hv = top_k_accuracy_score(video_labels, HV_scores, k=5, labels=[x for x in range(61)])
 
+# Compute the overall accuracy Hard Voting pairs of models with gmean
+acc_1_hv_gmean = accuracy_score(video_labels, video_pred_hv_gmean)
+acc_5_hv_gmean = top_k_accuracy_score(video_labels, HV_gmean_scores, k=5, labels=[x for x in range(61)])
+
+
 
 print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
 print('Overall SKlearn Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
+print('Overall SKlearn Pairs gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_gmean * 100, acc_5_gmean * 100))
 
 print('Overall SKlearn HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_1_hv_avg * 100))
 print('Overall SKlearn HV Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv * 100, acc_1_hv * 100))
+print('Overall SKlearn HV gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_gmean * 100, acc_1_hv_gmean * 100))
+
 
 print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
