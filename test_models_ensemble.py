@@ -378,9 +378,24 @@ ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
 ensemble_scores_gmean = np.squeeze(st.gmean(np.array(total_scores), axis=0))
 gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axis=0))
 
+"""
 HV_avg_scores = np.squeeze(st.mode(total_avg_scores, axis=0, keepdims = False))[0]
 HV_scores = np.squeeze(st.mode(total_scores, axis=0, keepdims = False))[0]
 HV_gmean_scores = np.squeeze(st.mode(total_gmean_scores, axis=0, keepdims = False))[0]
+"""
+
+
+hard_preds_avg = np.argmax(np.squeeze(np.array(total_avg_scores)), axis=-1)
+video_pred_hv_avg = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_avg)
+
+hard_preds = np.argmax(np.squeeze(np.array(total_scores)), axis=-1)
+video_pred_hv = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds)
+
+hard_preds_gmean = np.argmax(np.squeeze(np.array(total_gmean_scores)), axis=-1)
+video_pred_hv_gmean = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_gmean)
+
+
+
 
 print("TOTAL AVG SCORES PAIRS:") #(20, 61)
 print(avg_scores.shape)
@@ -413,9 +428,11 @@ video_pred = [np.argmax(x) for x in ensemble_scores]
 video_pred_gmean = [np.argmax(x) for x in gmean_scores]
 video_pred_ens_gmean = [np.argmax(x) for x in ensemble_scores_gmean]
 
+"""
 video_pred_hv_avg = [np.argmax(x) for x in HV_avg_scores]
 video_pred_hv = [np.argmax(x) for x in HV_scores]
 video_pred_hv_gmean = [np.argmax(x) for x in HV_gmean_scores]
+"""
 
 """
 print("video labels:")
