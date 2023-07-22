@@ -229,3 +229,23 @@ def resnet101(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, 
     """
     return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
                    num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
+
+# ADDED
+def wide_resnet101_2(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, **kwargs):
+    r"""Wide ResNet-101-2 model from
+    `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_
+
+    The model is the same as ResNet except for the bottleneck number of channels
+    which is twice larger in every block. The number of channels in outer 1x1
+    convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
+    channels, and in Wide ResNet-50-2 has 2048-1024-2048.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    kwargs['width_per_group'] = 64 * 2
+    return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3], pretrained, progress, 
+                   num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
+
+
