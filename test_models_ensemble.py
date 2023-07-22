@@ -363,15 +363,15 @@ with torch.no_grad():
 
 print("TOTAL SCORES:") #(4, 20, 1, 61) --> (4, 20, 61)
 print(np.squeeze(np.array(total_scores)).shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61) --> (2, 20, 61)
 print(np.squeeze(np.array(total_avg_scores)).shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 print("TOTAL SCORES GMEAN:") #(2, 20, 1, 61) --> (2, 20, 61)
 print(np.squeeze(np.array(total_gmean_scores)).shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
@@ -384,28 +384,28 @@ HV_gmean_scores = np.squeeze(st.mode(total_gmean_scores, axis=0, keepdims = Fals
 
 print("TOTAL AVG SCORES PAIRS:") #(20, 61)
 print(avg_scores.shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 print("TOTAL AVG SCORES:") #(20, 61)
 print(ensemble_scores.shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 print("TOTAL GMEAN SCORES:") #(20, 61)
 print(gmean_scores.shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 
 print("HARD VOTING PAIRS:") #(20, 61)
 print(HV_avg_scores.shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 print("HARD VOTING:") #(20, 61)
 print(HV_scores.shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 print("HARD VOTING GMEAN:") #(20, 61)
 print(HV_gmean_scores.shape)
-print("###############################################\n\n")
+print("###############################################\n")
 
 
 video_pred_avg = [np.argmax(x) for x in avg_scores]
@@ -417,6 +417,7 @@ video_pred_hv_avg = [np.argmax(x) for x in HV_avg_scores]
 video_pred_hv = [np.argmax(x) for x in HV_scores]
 video_pred_hv_gmean = [np.argmax(x) for x in HV_gmean_scores]
 
+"""
 print("video labels:")
 print(video_labels)
 
@@ -433,7 +434,7 @@ print("video preds HV:")
 print(video_pred_hv)
 print("video preds HV gmean:")
 print(video_pred_hv_gmean)
-
+"""
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
 
