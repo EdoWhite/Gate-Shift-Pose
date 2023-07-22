@@ -77,6 +77,16 @@ def accuracy(output, target, topk=(1,)):
          res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
+def accuracy_top5_hardvoting(true_labels, scores):
+    """Computes the Top-5 Accuracy for Ensembles in an Hard Voting approach"""
+    top5_predictions = np.argsort(scores, axis=-1)[:, :, -5:]
+
+    true_labels_expanded = np.expand_dims(true_labels, axis=0)
+    top5_correct = np.any(top5_predictions == true_labels_expanded[..., np.newaxis], axis=-1)
+    top5_accuracy = np.mean(top5_correct)
+
+    return top5_accuracy
+
 
 args.train_list, args.val_list, args.test_list, args.root_path_rgb, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path_rgb)
 args.train_list, args.val_list, args.test_list, args.root_path_depth, prefix = datasets_video.return_dataset(args.dataset, args.dataset_path_depth)
@@ -369,9 +379,6 @@ print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61) --> (2, 20, 61)
 print(np.squeeze(np.array(total_avg_scores)).shape)
 print("###############################################\n")
 
-print("TOTAL SCORES GMEAN:") #(2, 20, 1, 61) --> (2, 20, 61)
-print(np.squeeze(np.array(total_gmean_scores)).shape)
-print("###############################################\n")
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
 ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
@@ -384,7 +391,6 @@ HV_scores = np.squeeze(st.mode(total_scores, axis=0, keepdims = False))[0]
 HV_gmean_scores = np.squeeze(st.mode(total_gmean_scores, axis=0, keepdims = False))[0]
 """
 
-
 hard_preds_avg = np.argmax(np.squeeze(np.array(total_avg_scores)), axis=-1)
 video_pred_hv_avg = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_avg)
 
@@ -393,8 +399,6 @@ video_pred_hv = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, a
 
 hard_preds_gmean = np.argmax(np.squeeze(np.array(total_gmean_scores)), axis=-1)
 video_pred_hv_gmean = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_gmean)
-
-
 
 
 print("TOTAL AVG SCORES PAIRS:") #(20, 61)
@@ -410,19 +414,6 @@ print(gmean_scores.shape)
 print("###############################################\n")
 
 
-print("HARD VOTING PAIRS:") #(20, 61)
-print(HV_avg_scores.shape)
-print("###############################################\n")
-
-print("HARD VOTING:") #(20, 61)
-print(HV_scores.shape)
-print("###############################################\n")
-
-print("HARD VOTING GMEAN:") #(20, 61)
-print(HV_gmean_scores.shape)
-print("###############################################\n")
-
-
 video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
 video_pred_gmean = [np.argmax(x) for x in gmean_scores]
@@ -434,7 +425,6 @@ video_pred_hv = [np.argmax(x) for x in HV_scores]
 video_pred_hv_gmean = [np.argmax(x) for x in HV_gmean_scores]
 """
 
-"""
 print("video labels:")
 print(video_labels)
 
@@ -451,7 +441,7 @@ print("video preds HV:")
 print(video_pred_hv)
 print("video preds HV gmean:")
 print(video_pred_hv_gmean)
-"""
+
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
 
@@ -473,15 +463,15 @@ acc_5_ens_gmean = top_k_accuracy_score(video_labels, ensemble_scores_gmean, k=5,
 
 # Compute the overall accuracy Hard Voting pairs of models
 acc_1_hv_avg = accuracy_score(video_labels, video_pred_hv_avg)
-acc_5_hv_avg = top_k_accuracy_score(video_labels, HV_avg_scores, k=5, labels=[x for x in range(61)])
+acc_5_hv_avg = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_avg_scores)))
 
 # Compute the overall accuracy Hard Voting each model independently
 acc_1_hv = accuracy_score(video_labels, video_pred_hv)
-acc_5_hv = top_k_accuracy_score(video_labels, HV_scores, k=5, labels=[x for x in range(61)])
+acc_5_hv = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_scores)))
 
 # Compute the overall accuracy Hard Voting pairs of models with gmean
 acc_1_hv_gmean = accuracy_score(video_labels, video_pred_hv_gmean)
-acc_5_hv_gmean = top_k_accuracy_score(video_labels, HV_gmean_scores, k=5, labels=[x for x in range(61)])
+acc_5_hv_gmean = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_gmean_scores)))
 
 
 
