@@ -360,7 +360,7 @@ with torch.no_grad():
             prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), label_depth.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
             top5.update(prec5, 1)
-
+            
 
             print('video {} done, total {}/{}, average {:.3f} sec/video, moving Acc@1 {:.3f} Acc@5 {:.3f}'.format(j, j+1,
                                                                             total_num_rgb,
@@ -427,21 +427,33 @@ video_pred_hv_gmean = [np.argmax(x) for x in HV_gmean_scores]
 
 print("video labels:")
 print(video_labels)
+print("\n")
 
 print("video preds avg:")
 print(video_pred_avg)
+print("\n")
+
 print("video preds:")
 print(video_pred)
+print("\n")
+
 print("video preds gmean:")
 print(video_pred_gmean)
+print("\n")
+
+print("video preds gmean:")
+print(video_pred_ens_gmean)
+print("\n")
 
 print("video preds HV avg:")
 print(video_pred_hv_avg)
+print("\n")
 print("video preds HV:")
 print(video_pred_hv)
+print("\n")
 print("video preds HV gmean:")
 print(video_pred_hv_gmean)
-
+print("\n")
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
 
