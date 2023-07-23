@@ -239,6 +239,13 @@ class InceptionV3_kinetics_gsf(BNInception_kinetics_gsf):
         super(InceptionV3_kinetics_gsf, self).__init__(model_path=model_path, weight_url=weight_url,
                                               num_classes=num_classes, num_segments=num_segments,
                                               gsf_ch_ratio=gsf_ch_ratio)
-    
 
-        
+"""
+Checkpoint from:
+    https://github.com/epic-kitchens/epic-kitchens-55-action-models/blob/master/archs/bn_inception.py
+Link:
+    https://www.dropbox.com/s/gx4u7itoyygix0c/BNInceptionKinetics-47f0695e.pth?dl=1
+
+From same of the one present before:
+# https://yjxiong.blob.core.windows.net/ssn-models/inceptionv3_rgb_kinetics_init-c42e70a05e22.pth
+"""
