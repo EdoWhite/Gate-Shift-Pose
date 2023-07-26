@@ -352,11 +352,6 @@ with torch.no_grad():
             partial_avg_scores.append(rst_avg)
             partial_gmean_scores.append(rst_gmean)
 
-            """
-            prec1, prec5 = accuracy(torch.from_numpy(rst_rgb[1]).cuda(), label_rgb.cuda(), topk=(1, 5))
-            top1.update(prec1, 1)
-            top5.update(prec5, 1)
-            """
             prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), label_depth.cuda(), topk=(1, 5))
             top1.update(prec1, 1)
             top5.update(prec5, 1)
@@ -487,20 +482,21 @@ acc_5_hv_gmean = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(tota
 
 
 
-print('Overall SKlearn Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
-print('Overall SKlearn gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_ens_gmean * 100, acc_5_ens_gmean * 100))
-print("\n")
+print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1 * 100, acc_5 * 100))
 
-print('Overall SKlearn Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
-print('Overall SKlearn Pairs (gmean) Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_gmean * 100, acc_5_gmean * 100))
-print("\n")
+print('Overall gmean Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_ens_gmean * 100, acc_5_ens_gmean * 100))
 
-print('Overall SKlearn HV Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv * 100, acc_5_hv * 100))
-print('Overall SKlearn HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_5_hv_avg * 100))
-print('Overall SKlearn HV Pairs (gmean) Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_gmean * 100, acc_5_hv_gmean * 100))
-print("\n")
+print('Overall Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_avg * 100, acc_5_avg * 100))
 
-print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
+print('Overall Pairs (gmean) Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_gmean * 100, acc_5_gmean * 100))
+
+print('Overall HV Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv * 100, acc_5_hv * 100))
+
+print('Overall HV Pairs Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_avg * 100, acc_5_hv_avg * 100))
+
+print('Overall HV Pairs (gmean) Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(acc_1_hv_gmean * 100, acc_5_hv_gmean * 100))
+
+#print('Overall Acc@1 {:.02f}% Acc@5 {:.02f}%'.format(top1.avg, top5.avg))
 
 if args.save_scores:
     save_name = args.checkpoint_rgb[:-8] + args.checkpoint_depth[:-8] + '_clips_' + str(args.num_clips) + '_crops_' + str(args.test_crops) + '.pkl'
