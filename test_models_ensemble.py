@@ -28,7 +28,9 @@ parser.add_argument('--dataset_path_depth', type=str, default='./dataset_depth')
 
 parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
+
 parser.add_argument('--weight_rgb', type=float, default=0.5)
+
 #parser.add_argument('--hard_voting', default=False, action="store_true")
 parser.add_argument('--save_scores', default=False, action="store_true")
 parser.add_argument('--test_crops', type=int, default=1)
@@ -342,8 +344,10 @@ with torch.no_grad():
             rst_rgb = eval_video((j, data_rgb, label_rgb), net_rgb)
             rst_depth = eval_video((k, data_depth, label_depth), net_depth)
 
-            rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
-            rst_gmean = st.gmean(np.stack([rst_rgb[1], rst_depth[1]]), axis=0)
+            #rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
+            rst_avg = (args.weight_rgb * rst_rgb[1] + weight_depth * rst_depth[1]) / (args.weight_rgb + weight_depth)
+
+            rst_gmean = st.gmean(np.stack([rst_rgb[1], rst_depth[1]]), weights=[args.weight_rgb, weight_depth], axis=0)
 
             video_labels[j] = rst_rgb[2]
 
