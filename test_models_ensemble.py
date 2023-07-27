@@ -347,7 +347,7 @@ with torch.no_grad():
             #rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
             rst_avg = (args.weight_rgb * rst_rgb[1] + weight_depth * rst_depth[1]) / (args.weight_rgb + weight_depth)
 
-            rst_gmean = st.gmean(np.stack([rst_rgb[1], rst_depth[1]]), weights=[args.weight_rgb, weight_depth], axis=0)
+            rst_gmean = st.gmean(np.stack([rst_rgb[1], rst_depth[1]]), axis=0)
 
             video_labels[j] = rst_rgb[2]
 
