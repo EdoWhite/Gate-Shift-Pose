@@ -105,6 +105,20 @@ class VideoModel(nn.Module):
             self.input_mean = [104, 117, 128]
             self.input_std = [1, 1, 1]
             feature_dim = 2048
+        # ADDED
+        elif base_model == 'inceptionv3_kinetics':
+            import backbones.pytorch_load as inception
+            if self.gsf:
+                self.base_model = inception.InceptionV3_kinetics_gsf(num_segments=self.num_segments,
+                                                                     gsf_ch_ratio=self.gsf_ch_ratio)
+            else:
+                self.base_model = inception.InceptionV3()
+            self.base_model.last_layer_name = 'top_cls_fc'
+            self.input_size = 229
+            self.input_mean = [104, 117, 128]
+            self.input_std = [1, 1, 1]
+            feature_dim = 2048
+
         else:
             raise ValueError('Unknown base model: {}'.format(base_model))
         return feature_dim
