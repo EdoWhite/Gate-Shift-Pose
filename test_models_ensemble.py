@@ -16,6 +16,7 @@ import pdb
 from torch.nn import functional as F
 import sys
 import pickle as pkl
+import os
 
 
 # options
@@ -30,6 +31,8 @@ parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
 
 parser.add_argument('--weight_rgb', type=float, default=0.5)
+
+parser.add_argument('--save_logits', default=False, action="store_true")
 
 #parser.add_argument('--hard_voting', default=False, action="store_true")
 parser.add_argument('--save_scores', default=False, action="store_true")
@@ -323,11 +326,15 @@ total_scores = []
 total_avg_scores = []
 total_gmean_scores = []
 
+total_logits_rgb = []
+total_logits_depth = []
+
 video_labels = np.zeros(total_num_rgb)
 top1 = AverageMeter()
 top5 = AverageMeter()
 
-weight_depth = 1 - args.weight_rgb        
+weight_depth = 1 - args.weight_rgb   
+cnt = 1     
 
 with torch.no_grad():
     for data_gen_rgb, data_gen_depth, net_rgb, net_depth in zip(data_loader_rgb_list, data_loader_depth_list, net_rgb_list, net_depth_list):
@@ -337,12 +344,21 @@ with torch.no_grad():
         partial_depth_score = []
         partial_avg_scores = []
         partial_gmean_scores = []
+
+        partial_logits_rgb = []
+        partial_logits_depth = []
+
         for (j, (data_rgb, label_rgb)), (k, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
 
             cnt_time = time.time() - proc_start_time
 
             rst_rgb = eval_video((j, data_rgb, label_rgb), net_rgb)
             rst_depth = eval_video((k, data_depth, label_depth), net_depth)
+
+            # SAVE SCORES
+            partial_logits_rgb.append(rst_rgb[1])
+            partial_logits_depth.append(rst_depth[1])
+            #
 
             #rst_avg = (rst_rgb[1] + rst_depth[1]) / 2.0
             rst_avg = (args.weight_rgb * rst_rgb[1] + weight_depth * rst_depth[1]) / (args.weight_rgb + weight_depth)
@@ -369,6 +385,27 @@ with torch.no_grad():
         total_gmean_scores.append(partial_gmean_scores)
         total_scores.append(partial_rgb_score)
         total_scores.append(partial_depth_score)
+
+        # SINGLE MODELS write on disk the partials
+        if args.save_logits:
+            print("SAVING LOGITS!")
+            if not os.path.exists("../LOGITS"):
+                os.makedirs("../LOGITS")
+            filename_rgb = '../LOGITS/Logits-RGB-model-{}'.format(cnt)
+            filename_depth = '../LOGITS/Logits-DEPTH-model-{}'.format(cnt)
+            np.save(file=filename_rgb, arr=np.array(partial_logits_rgb))
+            np.save(file=filename_depth, arr=np.array(partial_logits_depth))
+            cnt += 1
+        
+        # ALL TOGETHER
+        total_logits_rgb.append(partial_logits_rgb)
+        total_logits_depth.append(partial_logits_depth)
+
+# WRITE ALL TOGETHER on disk
+if args.save_logits:
+    np.save(file="../LOGITS/total_logits_RGB", arr=np.array(total_logits_rgb))
+    np.save(file="./LOGITS/total_logits_DEPTH", arr=np.array(total_logits_depth))
+
 
 print("TOTAL SCORES:") #(4, 20, 1, 61) --> (4, 20, 61)
 print(np.squeeze(np.array(total_scores)).shape)
