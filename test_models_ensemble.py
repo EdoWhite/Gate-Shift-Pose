@@ -404,7 +404,7 @@ with torch.no_grad():
 # WRITE ALL TOGETHER on disk
 if args.save_logits:
     np.save(file="../LOGITS/total_logits_RGB", arr=np.array(total_logits_rgb))
-    np.save(file="./LOGITS/total_logits_DEPTH", arr=np.array(total_logits_depth))
+    np.save(file="../LOGITS/total_logits_DEPTH", arr=np.array(total_logits_depth))
 
 
 print("TOTAL SCORES:") #(4, 20, 1, 61) --> (4, 20, 61)
