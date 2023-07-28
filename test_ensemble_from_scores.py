@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(description="GSF testing with saved logits")
 parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
 
-parser.add_argument('--test_labels_path', type=str)
+parser.add_argument('--test_labels', type=str)
 
 parser.add_argument('--weight_rgb', type=float, default=0.5)
 
@@ -91,10 +91,13 @@ def accuracy_top5_hardvoting(true_labels, scores):
 def read_labels(file_path):
     last_columns = []
     with open(file_path, 'r') as file:
-        for line in file:
-            columns = line.strip().split()
-            last_column = int(columns[-1])
-            last_columns.append(last_column)
+        lines = file.readlines()
+        for line in lines[:-2]:
+            line = line.strip()
+            if line:
+                columns = line.split()
+                last_column = int(columns[-1])
+                last_columns.append(last_column)
     return last_columns
 
 
@@ -106,10 +109,11 @@ with open(args.depth_models, 'r') as file:
     depth_scores_paths = file.read().splitlines()
 
 # Load the saved softmax scores
-rgb_scores_list = [np.squeeze(np.load(path)) for path in rgb_scores_paths]
-depth_scores_list = [np.squeeze(np.load(path)) for path in depth_scores_paths]
+rgb_scores_list = [np.load(path) for path in rgb_scores_paths]
+depth_scores_list = [np.load(path) for path in depth_scores_paths]
 
-video_labels = np.array(read_labels(args.test_labels_path))
+#video_labels = np.array(read_labels(args.test_labels_path))
+video_labels = np.load(args.test_labels)
 
 total_scores = []
 total_avg_scores = []
@@ -198,33 +202,33 @@ video_pred_ens_gmean = [np.argmax(x) for x in ensemble_scores_gmean]
 
 
 print("video labels:")
-print(video_labels.shape)
+print(video_labels)
 print("\n")
 
 print("video preds avg:")
-print(len(video_pred_avg))
+print(video_pred_avg)
 print("\n")
 
 print("video preds:")
-print(len(video_pred))
+print(video_pred)
 print("\n")
 
 print("video preds gmean:")
-print(len(video_pred_gmean))
+print(video_pred_gmean)
 print("\n")
 
 print("video preds gmean:")
-print(len(video_pred_ens_gmean))
+print(video_pred_ens_gmean)
 print("\n")
 
 print("video preds HV avg:")
-print(video_pred_hv_avg.shape)
+print(video_pred_hv_avg)
 print("\n")
 print("video preds HV:")
-print(video_pred_hv.shape)
+print(video_pred_hv)
 print("\n")
 print("video preds HV gmean:")
-print(video_pred_hv_gmean.shape)
+print(video_pred_hv_gmean)
 print("\n")
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))

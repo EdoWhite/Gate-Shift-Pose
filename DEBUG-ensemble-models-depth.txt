@@ -1,0 +1,1 @@
+../MODELS/ENSEMBLE/meccano-DEPTH-wide_resnet101-300epochs-8Seg-16B/meccano_wide_resnet101_2_segment8_best.pth.tar wide_resnet101_2 8

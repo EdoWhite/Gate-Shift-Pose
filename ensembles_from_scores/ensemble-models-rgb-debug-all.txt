@@ -1,0 +1,12 @@
+../LOGITS/Logits-RGB-model-1.npy
+../LOGITS/Logits-RGB-model-2.npy
+../LOGITS/Logits-RGB-model-3.npy
+../LOGITS/Logits-RGB-model-4.npy
+../LOGITS/Logits-RGB-model-5.npy
+../LOGITS/Logits-RGB-model-6.npy
+../LOGITS/Logits-RGB-model-7.npy
+../LOGITS/Logits-RGB-model-8.npy
+../LOGITS/Logits-RGB-model-9.npy
+../LOGITS/Logits-RGB-model-10.npy
+../LOGITS/Logits-RGB-model-11.npy
+../LOGITS/Logits-RGB-model-12.npy
