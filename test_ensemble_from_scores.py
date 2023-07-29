@@ -18,65 +18,13 @@ import sys
 import pickle as pkl
 import os
 
-
-# options
 parser = argparse.ArgumentParser(description="GSF testing with saved logits")
 
 parser.add_argument('--rgb_models', type=str)
 parser.add_argument('--depth_models', type=str)
-
 parser.add_argument('--test_labels', type=str)
-
 parser.add_argument('--weight_rgb', type=float, default=0.5)
-
-"""
-#parser.add_argument('--hard_voting', default=False, action="store_true")
-parser.add_argument('--save_scores', default=False, action="store_true")
-parser.add_argument('--test_crops', type=int, default=1)
-parser.add_argument('--max_num', type=int, default=-1)
-parser.add_argument('--input_size', type=int, default=0)
-parser.add_argument('--crop_fusion_type', type=str, default='avg')
-parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                    help='number of data loading workers (default: 4)')
-parser.add_argument('--gpus', nargs='+', type=int, default=None)
-parser.add_argument('--num_clips',type=int, default=1,help='Number of clips sampled from a video')
-parser.add_argument('--softmax', type=int, default=0)
-parser.add_argument('--gsf', default=False, action="store_true")
-parser.add_argument('--gsf_ch_ratio', default=100, type=float)
-parser.add_argument('--with_amp', default=False, action="store_true")
-parser.add_argument('--frame_interval', type=int, default=5)
-"""
 args = parser.parse_args()
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-def accuracy(output, target, topk=(1,)):
-    """Computes the precision@k for the specified values of k"""
-    maxk = max(topk)
-    batch_size = target.size(0)
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
-    res = []
-    for k in topk:
-         correct_k = correct[:k].view(-1).float().sum(0)
-         res.append(correct_k.mul_(100.0 / batch_size))
-    return res
 
 def accuracy_top5_hardvoting(true_labels, scores):
     """Computes the Top-5 Accuracy for Ensembles in an Hard Voting approach"""
@@ -87,19 +35,6 @@ def accuracy_top5_hardvoting(true_labels, scores):
     top5_accuracy = np.mean(top5_correct)
 
     return top5_accuracy
-
-def read_labels(file_path):
-    last_columns = []
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-        for line in lines[:-2]:
-            line = line.strip()
-            if line:
-                columns = line.split()
-                last_column = int(columns[-1])
-                last_columns.append(last_column)
-    return last_columns
-
 
 # READING SCORES LIST
 with open(args.rgb_models, 'r') as file:
@@ -112,15 +47,11 @@ with open(args.depth_models, 'r') as file:
 rgb_scores_list = [np.load(path) for path in rgb_scores_paths]
 depth_scores_list = [np.load(path) for path in depth_scores_paths]
 
-#video_labels = np.array(read_labels(args.test_labels_path))
 video_labels = np.load(args.test_labels)
 
 total_scores = []
 total_avg_scores = []
 total_gmean_scores = []
-
-top1 = AverageMeter()
-top5 = AverageMeter()
 
 weight_depth = 1 - args.weight_rgb      
 
@@ -135,7 +66,6 @@ for score_rgb, score_depth in zip(rgb_scores_list, depth_scores_list):
     for rst_rgb, rst_depth in zip(score_rgb, score_depth):
         
         rst_avg = (args.weight_rgb * rst_rgb + weight_depth * rst_depth) / (args.weight_rgb + weight_depth)
-
         rst_gmean = st.gmean(np.stack([rst_rgb, rst_depth]), axis=0)
 
         partial_rgb_score.append(rst_rgb)
@@ -143,27 +73,12 @@ for score_rgb, score_depth in zip(rgb_scores_list, depth_scores_list):
         partial_avg_scores.append(rst_avg)
         partial_gmean_scores.append(rst_gmean)
 
-        #prec1, prec5 = accuracy(torch.from_numpy(rst_avg).cuda(), torch.from_numpy(video_labels).cuda(), topk=(1, 5))
-        #top1.update(prec1, 1)
-        #top5.update(prec5, 1)
-        
-
-        #print('video {} done, total {}/{}, average {:.3f} sec/video, moving Acc@1 {:.3f} Acc@5 {:.3f}'.format(cnt, cnt+1,0,float(0) / (cnt+1), top1.avg, top5.avg))
         cnt += 1
         
     total_avg_scores.append(partial_avg_scores)
     total_gmean_scores.append(partial_gmean_scores)
     total_scores.append(partial_rgb_score)
     total_scores.append(partial_depth_score)
-
-
-print("TOTAL SCORES:") #(4, 20, 1, 61) --> (4, 20, 61)
-print(np.squeeze(np.array(total_scores)).shape)
-print("###############################################\n")
-
-print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61) --> (2, 20, 61)
-print(np.squeeze(np.array(total_avg_scores)).shape)
-print("###############################################\n")
 
 
 avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
@@ -182,54 +97,10 @@ hard_preds_gmean = np.argmax(np.squeeze(np.array(total_gmean_scores)), axis=-1)
 video_pred_hv_gmean = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_gmean)
 
 
-print("TOTAL AVG SCORES PAIRS:") #(20, 61)
-print(avg_scores.shape)
-print("###############################################\n")
-
-print("TOTAL AVG SCORES:") #(20, 61)
-print(ensemble_scores.shape)
-print("###############################################\n")
-
-print("TOTAL GMEAN SCORES:") #(20, 61)
-print(gmean_scores.shape)
-print("###############################################\n")
-
-
 video_pred_avg = [np.argmax(x) for x in avg_scores]
 video_pred = [np.argmax(x) for x in ensemble_scores]
 video_pred_gmean = [np.argmax(x) for x in gmean_scores]
 video_pred_ens_gmean = [np.argmax(x) for x in ensemble_scores_gmean]
-
-
-print("video labels:")
-print(video_labels)
-print("\n")
-
-print("video preds avg:")
-print(video_pred_avg)
-print("\n")
-
-print("video preds:")
-print(video_pred)
-print("\n")
-
-print("video preds gmean:")
-print(video_pred_gmean)
-print("\n")
-
-print("video preds gmean:")
-print(video_pred_ens_gmean)
-print("\n")
-
-print("video preds HV avg:")
-print(video_pred_hv_avg)
-print("\n")
-print("video preds HV:")
-print(video_pred_hv)
-print("\n")
-print("video preds HV gmean:")
-print(video_pred_hv_gmean)
-print("\n")
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
 
