@@ -461,7 +461,8 @@ video_pred_hv = [np.argmax(x) for x in HV_scores]
 video_pred_hv_gmean = [np.argmax(x) for x in HV_gmean_scores]
 """
 
-np.save(file="../LOGITS/video_labels", arr=video_labels)
+if args.save_logits:
+    np.save(file="../LOGITS/video_labels", arr=video_labels)
 
 print("video labels:")
 print(video_labels.shape)
