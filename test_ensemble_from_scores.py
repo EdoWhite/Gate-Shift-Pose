@@ -120,17 +120,25 @@ acc_5_gmean = top_k_accuracy_score(video_labels, gmean_scores, k=5, labels=[x fo
 acc_1_ens_gmean = accuracy_score(video_labels, video_pred_ens_gmean)
 acc_5_ens_gmean = top_k_accuracy_score(video_labels, ensemble_scores_gmean, k=5, labels=[x for x in range(61)])
 
-# Compute the overall accuracy Hard Voting pairs of models
-acc_1_hv_avg = accuracy_score(video_labels, video_pred_hv_avg)
-acc_5_hv_avg = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_avg_scores)))
+acc_1_hv_avg = 0
+acc_5_hv_avg = 0
+acc_1_hv = 0
+acc_5_hv = 0
+acc_1_hv_gmean = 0
+acc_5_hv_gmean = 0
 
-# Compute the overall accuracy Hard Voting each model independently
-acc_1_hv = accuracy_score(video_labels, video_pred_hv)
-acc_5_hv = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_scores)))
+if len(rgb_scores_list) > 1:
+    # Compute the overall accuracy Hard Voting pairs of models
+    acc_1_hv_avg = accuracy_score(video_labels, video_pred_hv_avg)
+    acc_5_hv_avg = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_avg_scores)))
 
-# Compute the overall accuracy Hard Voting pairs of models with gmean
-acc_1_hv_gmean = accuracy_score(video_labels, video_pred_hv_gmean)
-acc_5_hv_gmean = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_gmean_scores)))
+    # Compute the overall accuracy Hard Voting each model independently
+    acc_1_hv = accuracy_score(video_labels, video_pred_hv)
+    acc_5_hv = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_scores)))
+
+    # Compute the overall accuracy Hard Voting pairs of models with gmean
+    acc_1_hv_gmean = accuracy_score(video_labels, video_pred_hv_gmean)
+    acc_5_hv_gmean = accuracy_top5_hardvoting(video_labels, np.squeeze(np.array(total_gmean_scores)))
 
 
 
