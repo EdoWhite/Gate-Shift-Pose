@@ -1,0 +1,8 @@
+-----Evaluation of ensembles_from_scores/slow-depth.txt and ensembles_from_scores/slow-depth.txt is finished------
+Overall Acc@1 46.47% Acc@5 77.38%
+Overall gmean Acc@1 46.51% Acc@5 77.35%
+Overall Pairs Acc@1 46.47% Acc@5 77.38%
+Overall Pairs (gmean) Acc@1 46.51% Acc@5 77.35%
+Overall HV Acc@1 0.00% Acc@5 0.00%
+Overall HV Pairs Acc@1 0.00% Acc@5 0.00%
+Overall HV Pairs (gmean) Acc@1 0.00% Acc@5 0.00%
