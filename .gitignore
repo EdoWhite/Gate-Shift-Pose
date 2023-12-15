@@ -2,6 +2,7 @@ data/*
 dataset/**
 dataset_depth/**
 experiments
+INFERENCE
 CHECKPOINT/**
 meccanoTest
 .vscode
