@@ -1,1 +1,2 @@
-../MODELS/ENSEMBLE/meccano-RGB-wide_resnet101_2-200epochs-8Seg/meccano_wide_resnet101_2_segment8_best.pth.tar wide_resnet101_2 8
+./experiments/meccano/wide_resnet101_2/Jul21_15-56-50_meccano-RGB-wide_resnet101_2-200epochs-8Seg/meccano_wide_resnet101_2_segment8_best.pth.tar wide_resnet101_2 8
+./experiments/meccano/wide_resnet101_2/Jul21_15-56-50_meccano-RGB-wide_resnet101_2-200epochs-8Seg/meccano_wide_resnet101_2_segment8_best.pth.tar wide_resnet101_2 8

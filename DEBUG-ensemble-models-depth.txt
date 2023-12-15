@@ -1,1 +1,2 @@
-../MODELS/ENSEMBLE/meccano-DEPTH-wide_resnet101-300epochs-8Seg-16B/meccano_wide_resnet101_2_segment8_best.pth.tar wide_resnet101_2 8
+./experiments/meccano/resnet50/Jul26_10-41-14_meccano-DEPTH-resnet50-200epochs-24Seg-16B/meccano_resnet50_segment24_best.pth.tar resnet50 24
+./experiments/meccano/resnet50/Jul26_10-41-14_meccano-DEPTH-resnet50-200epochs-24Seg-16B/meccano_resnet50_segment24_best.pth.tar resnet50 24
