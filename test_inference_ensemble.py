@@ -228,11 +228,6 @@ total_num_rgb = len(data_loader_rgb_list[0].dataset) # all have the same len
 proc_start_time = time.time()
 
 total_scores = []
-total_avg_scores = []
-total_gmean_scores = []
-
-total_logits_rgb = []
-total_logits_depth = []
 
 weight_depth = 1 - args.weight_rgb   
 cnt = 1     
@@ -243,11 +238,6 @@ with torch.no_grad():
         data_gen_depth = enumerate(data_gen_depth)
         partial_rgb_score = []
         partial_depth_score = []
-        partial_avg_scores = []
-        partial_gmean_scores = []
-
-        partial_logits_rgb = []
-        partial_logits_depth = []
 
         for (j, (data_rgb, label_rgb)), (k, (data_depth, label_depth)) in zip(data_gen_rgb, data_gen_depth):
 
@@ -256,105 +246,37 @@ with torch.no_grad():
             rst_rgb = eval_video((j, data_rgb, label_rgb), net_rgb)
             rst_depth = eval_video((k, data_depth, label_depth), net_depth)
 
-            # SAVE SCORES
-            partial_logits_rgb.append(rst_rgb[1])
-            partial_logits_depth.append(rst_depth[1])
-            #
-
-            rst_avg = (args.weight_rgb * rst_rgb[1] + weight_depth * rst_depth[1]) / (args.weight_rgb + weight_depth)
-
-            rst_gmean = st.gmean(np.stack([rst_rgb[1], rst_depth[1]]), axis=0)
-
             partial_rgb_score.append(rst_rgb[1])
             partial_depth_score.append(rst_depth[1])
-            partial_avg_scores.append(rst_avg)
-            partial_gmean_scores.append(rst_gmean)
-            
 
-            print('video {} done, total {}/{}, average {:.3f} sec/video'.format(j, j+1,
-                                                                            total_num_rgb,
-                                                                            float(cnt_time) / (j+1)))
-            
-        total_avg_scores.append(partial_avg_scores)
-        total_gmean_scores.append(partial_gmean_scores)
+            print('video {} done, total {}/{}, average {:.3f} sec/video'.format(j, j+1,total_num_rgb,float(cnt_time) / (j+1)))
+
         total_scores.append(partial_rgb_score)
         total_scores.append(partial_depth_score)
-        
-        # ALL TOGETHER
-        total_logits_rgb.append(partial_logits_rgb)
-        total_logits_depth.append(partial_logits_depth)
 
 
 print("TOTAL SCORES:") #(4, 20, 1, 61) --> (4, 20, 61)
 print(np.squeeze(np.array(total_scores)).shape)
+print(np.array(total_scores).shape)
 print('\n')
-print(total_scores)
+print(np.array(total_scores))
 print('\n')
 print(np.squeeze(np.array(total_scores)))
 print("###############################################\n")
 
-print("TOTAL SCORES PAIRS:") #(2, 20, 1, 61) --> (2, 20, 61)
-print(np.squeeze(np.array(total_avg_scores)).shape)
-print("###############################################\n")
+total_scores = np.squeeze(np.array(total_scores))
 
-
-avg_scores = np.squeeze(np.mean(np.array(total_avg_scores), axis=0))
-ensemble_scores = np.squeeze(np.mean(np.array(total_scores), axis=0))
-ensemble_scores_gmean = np.squeeze(st.gmean(np.array(total_scores), axis=0))
-gmean_scores = np.squeeze(st.gmean(np.array(total_gmean_scores), axis=0))
-
-hard_preds_avg = np.argmax(np.squeeze(np.array(total_avg_scores)), axis=-1)
-video_pred_hv_avg = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_avg)
-
-hard_preds = np.argmax(np.squeeze(np.array(total_scores)), axis=-1)
-video_pred_hv = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds)
-
-hard_preds_gmean = np.argmax(np.squeeze(np.array(total_gmean_scores)), axis=-1)
-video_pred_hv_gmean = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=hard_preds_gmean)
-
-
-print("TOTAL AVG SCORES PAIRS:") #(20, 61)
-print(avg_scores.shape)
-print("###############################################\n")
+ensemble_scores = np.mean(total_scores, axis=0)
 
 print("TOTAL AVG SCORES:") #(20, 61)
 print(ensemble_scores.shape)
+print(ensemble_scores)
 print("###############################################\n")
 
-print("TOTAL GMEAN SCORES:") #(20, 61)
-print(gmean_scores.shape)
-print("###############################################\n")
-
-
-video_pred_avg = [np.argmax(x) for x in avg_scores]
-video_pred = [np.argmax(x) for x in ensemble_scores]
-video_pred_gmean = [np.argmax(x) for x in gmean_scores]
-video_pred_ens_gmean = [np.argmax(x) for x in ensemble_scores_gmean]
-
-print("video preds avg:")
-print(video_pred_avg)
-print("\n")
+video_pred = np.argmax(ensemble_scores)
 
 print("video preds:")
 print(video_pred)
-print("\n")
-
-print("video preds gmean:")
-print(video_pred_gmean)
-print("\n")
-
-print("video preds gmean:")
-print(video_pred_ens_gmean)
-print("\n")
-
-print("video preds HV avg:")
-print(video_pred_hv_avg)
-print("\n")
-print("video preds HV:")
-print(video_pred_hv)
-print("\n")
-print("video preds HV gmean:")
-print(video_pred_hv_gmean)
 print("\n")
 
 print('-----Evaluation of {} and {} is finished------'.format(args.rgb_models, args.rgb_models))
