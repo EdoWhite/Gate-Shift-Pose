@@ -1,2 +1,0 @@
-./experiments/meccano/resnet50/Jul26_10-41-14_meccano-DEPTH-resnet50-200epochs-24Seg-16B/meccano_resnet50_segment24_best.pth.tar resnet50 24
-./experiments/meccano/resnet50/Jul26_10-41-14_meccano-DEPTH-resnet50-200epochs-24Seg-16B/meccano_resnet50_segment24_best.pth.tar resnet50 24

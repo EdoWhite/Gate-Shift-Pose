@@ -18,6 +18,10 @@ import sys
 import pickle as pkl
 import os
 
+"""
+Costretto a rimuovere una coppia di modelli perchè un modello RGB (IncV3, 64Seg, 32Batch) è troppo grosso per essere caricato in memoria. 
+(inferenza gira su una solo scheda GPU)
+"""
 
 # options
 parser = argparse.ArgumentParser(
@@ -204,24 +208,25 @@ for net_rgb, net_depth in zip(net_rgb_list, net_depth_list):
     net_depth.eval()
 
 def eval_video(video_data, model):
-    i, data, _ = video_data
+    with torch.no_grad():
+        i, data, _ = video_data
 
-    length = 3
-    if args.num_clips > 1:
-        input_var = data.view(-1, length, data.size(3), data.size(4)).cuda()
-    else:
-        input_var = data.view(-1, length, data.size(2), data.size(3)).cuda()
-    with amp.autocast(enabled=args.with_amp):
-        rst = model(input_var, with_amp=args.with_amp, idx=i)
-        
-    if args.softmax==1:
-        # take the softmax to normalize the output to probability
-        rst = F.softmax(rst)
+        length = 3
+        if args.num_clips > 1:
+            input_var = data.view(-1, length, data.size(3), data.size(4)).cuda()
+        else:
+            input_var = data.view(-1, length, data.size(2), data.size(3)).cuda()
+        with amp.autocast(enabled=args.with_amp):
+            rst = model(input_var, with_amp=args.with_amp, idx=i)
+            
+        if args.softmax==1:
+            # take the softmax to normalize the output to probability
+            rst = F.softmax(rst)
 
-    rst = rst.reshape(-1, 1, num_class)
-    rst = torch.mean(rst, dim=0, keepdim=False).data.cpu().numpy()
+        rst = rst.reshape(-1, 1, num_class)
+        rst = torch.mean(rst, dim=0, keepdim=False).data.cpu().numpy()
 
-    return i, rst, _
+        return i, rst, _
 
 total_num_rgb = len(data_loader_rgb_list[0].dataset) # all have the same len
 
@@ -248,6 +253,9 @@ with torch.no_grad():
 
             partial_rgb_score.append(rst_rgb[1])
             partial_depth_score.append(rst_depth[1])
+            del rst_rgb
+            del rst_depth
+            torch.cuda.empty_cache()
 
             print('video {} done, total {}/{}, average {:.3f} sec/video'.format(j, j+1,total_num_rgb,float(cnt_time) / (j+1)))
 
