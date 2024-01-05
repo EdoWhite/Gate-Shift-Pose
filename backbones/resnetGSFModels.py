@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.model_zoo import load_url as load_state_dict_from_url
 import gsf
 
+# EDITED by white
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
@@ -169,7 +170,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _forward_impl(self, x, temperature=100):
+    def _forward_impl(self, x, temperature: float=100.0):
         # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.bn1(x)

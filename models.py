@@ -7,6 +7,7 @@ from scipy.ndimage import zoom
 import os, sys
 from torch.cuda import amp
 
+# EDITED by white
 
 class VideoModel(nn.Module):
     def __init__(self, num_class, num_segments,
@@ -45,6 +46,8 @@ class VideoModel(nn.Module):
 
         self.consensus = ConsensusModule(consensus_type)
 
+        self.softmax = nn.Softmax()
+        
         if not self.before_softmax:
             self.softmax = nn.Softmax()
 
@@ -180,19 +183,22 @@ class VideoModel(nn.Module):
              'name': "BN scale/shift"},
         ]
 
-    def forward(self, input, with_amp=False, idx=0, target=0):
-        with amp.autocast(enabled=with_amp):
-            base_out = self.base_model(input.view((-1, 3) + input.size()[-2:]))
+    def forward(self, input, with_amp: bool=False, idx:int=0, target:int=0):
+        #assert isinstance(with_amp, bool)
+    
+        base_out = self.base_model(input.view((-1, 3) + input.size()[-2:]))
 
-            if self.dropout > 0:
-                base_out_logits = self.new_fc(base_out)
+        base_out_logits = base_out if self.new_fc is None else self.new_fc(base_out)
+        
+        #if self.dropout > 0:
+        #    base_out_logits = self.new_fc(base_out)
 
-            if not self.before_softmax:
-                base_out_logits = self.softmax(base_out_logits)
-                
-            base_out_logits = base_out_logits.view((-1, self.num_segments) + base_out_logits.size()[1:])
+        if not self.before_softmax:
+            base_out_logits = self.softmax(base_out_logits)
+            
+        base_out_logits = base_out_logits.view((-1, self.num_segments) + base_out_logits.size()[1:])
 
-            output = self.consensus(base_out_logits)
+        output = self.consensus(base_out_logits)
 
         return output
 

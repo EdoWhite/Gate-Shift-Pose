@@ -17,6 +17,7 @@ from torch.nn import functional as F
 import sys
 import pickle as pkl
 import os
+import torch_tensorrt
 
 """
 Costretto a rimuovere una coppia di modelli perchè un modello RGB (IncV3, 64Seg, 32Batch) è troppo grosso per essere caricato in memoria. 
@@ -208,17 +209,19 @@ for net_rgb, net_depth in zip(net_rgb_list, net_depth_list):
     net_depth.eval()
 
 def eval_video(video_data, model):
-    with torch.no_grad():
-        i, data, _ = video_data
+    i, data, _ = video_data
 
-        length = 3
-        if args.num_clips > 1:
-            input_var = data.view(-1, length, data.size(3), data.size(4)).cuda()
-        else:
-            input_var = data.view(-1, length, data.size(2), data.size(3)).cuda()
-        with amp.autocast(enabled=args.with_amp):
-            rst = model(input_var, with_amp=args.with_amp, idx=i)
-            
+    length = 3
+    if args.num_clips > 1:
+        input_var = data.view(-1, length, data.size(3), data.size(4)).to("cuda")
+    else:
+        input_var = data.view(-1, length, data.size(2), data.size(3)).to("cuda")
+
+    with amp.autocast(enabled=args.with_amp):
+        #trt_model = torch_tensorrt.compile(model, inputs=[torch_tensorrt.Input(input_var.shape)], enabled_precisions = {torch.float, torch.half})
+        #rst = trt_model(input_var,with_amp=args.with_amp, idx=i)
+        rst = model(input_var, with_amp=args.with_amp, idx=i)
+        
         if args.softmax==1:
             # take the softmax to normalize the output to probability
             rst = F.softmax(rst)
@@ -226,7 +229,7 @@ def eval_video(video_data, model):
         rst = rst.reshape(-1, 1, num_class)
         rst = torch.mean(rst, dim=0, keepdim=False).data.cpu().numpy()
 
-        return i, rst, _
+    return i, rst, _
 
 total_num_rgb = len(data_loader_rgb_list[0].dataset) # all have the same len
 

@@ -1,4 +1,5 @@
 import torch
+# EDITED by white
 
 class Identity(torch.nn.Module):
     def forward(self, input):
@@ -9,10 +10,11 @@ class SegmentConsensus(torch.nn.Module):
         super(SegmentConsensus, self).__init__()
         self.consensus_type = consensus_type
         self.dim = dim
-        self.shape = None
+        #self.shape = None
 
     def forward(self, input_tensor):
-        self.shape = input_tensor.size()
+        #self.shape = input_tensor.size()
+        current_shape = input_tensor.size()
         if self.consensus_type == 'avg':
             output = input_tensor.mean(dim=self.dim, keepdim=True)
         elif self.consensus_type == 'identity':
@@ -20,13 +22,16 @@ class SegmentConsensus(torch.nn.Module):
         else:
             output = None
 
-        return output.squeeze(1)
+        if output is not None:
+            output = output.squeeze(1)
+        return output
 
 class ConsensusModule(torch.nn.Module):
     def __init__(self, consensus_type, dim=1):
         super(ConsensusModule, self).__init__()
         self.consensus_type = consensus_type if consensus_type != 'rnn' else 'identity'
         self.dim = dim
+        self.segment_consensus = SegmentConsensus(self.consensus_type, self.dim)
 
     def forward(self, input):
-        return SegmentConsensus(self.consensus_type, self.dim)(input)
+        return self.segment_consensus(input)
