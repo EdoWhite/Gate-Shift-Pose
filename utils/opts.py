@@ -1,8 +1,9 @@
 import argparse
 parser = argparse.ArgumentParser(description="PyTorch implementation of Gate-Shift Networks")
-parser.add_argument('--dataset', type=str, choices=['something-v1', 'diving48', 'something-v2', 'kinetics400', 'meccano'])
+parser.add_argument('--dataset', type=str, choices=['something-v1', 'diving48', 'something-v2', 'kinetics400', 'meccano', 'FRFS'])
 parser.add_argument('--dataset_path', type=str, default='./dataset')
 parser.add_argument('--experiment_name', type=str, default='')
+parser.add_argument('--experiment_path', type=str, default='.')
 parser.add_argument('--train_list', type=str,default="")
 parser.add_argument('--val_list', type=str, default="")
 #parser.add_argument('--split', type=str, default=1)
@@ -34,7 +35,7 @@ parser.add_argument('--with_amp', default=False, action="store_true")
 parser.add_argument('--clip-gradient', '--gd', default=20, type=float, metavar='W', help='gradient norm clipping (default: disabled)')
 # ========================= Monitor Configs ==========================
 parser.add_argument('--print-freq', '-p', default=20, type=int, metavar='N', help='print frequency (default: 10)')
-parser.add_argument('--eval-freq', '-ef', default=5, type=int, metavar='N', help='evaluation frequency (default: 5)')
+parser.add_argument('--eval-freq', '-ef', default=10, type=int, metavar='N', help='evaluation frequency (default: 5)')
 # ========================= Runtime Configs ==========================
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 4)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')

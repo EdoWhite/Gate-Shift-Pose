@@ -33,6 +33,49 @@ def conv1x1(in_planes, out_planes, stride=1):
     """1x1 convolution"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
+class BasicBlock(nn.Module):
+    expansion = 1  # For BasicBlock, expansion is 1 (output channels same as input channels)
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
+                 base_width=64, dilation=1, norm_layer=None, num_segments=8, gsf_ch_ratio=4):
+        super(BasicBlock, self).__init__()
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        
+        self.conv1 = conv3x3(inplanes, planes, stride)  # First convolution (3x3)
+        self.bn1 = norm_layer(planes)  # First batch normalization
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)  # Second convolution (3x3)
+        self.bn2 = norm_layer(planes)  # Second batch normalization
+
+        self.downsample = downsample  # Downsampling layer (if needed for dimension matching)
+        self.stride = stride
+
+        # Adding GSF module here for segment fusion
+        self.gsf = gsf.GSF(fPlane=planes * self.expansion, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio)
+
+    def forward(self, x):
+        identity = x
+
+        # Forward through first conv -> batch norm -> ReLU
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        # Forward through second conv -> batch norm
+        out = self.conv2(out)
+        out = self.gsf(out)  # Apply GSF module before final batch norm
+        out = self.bn2(out)
+
+        # Add identity (skip connection) if downsample is used
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        # Add residual connection and apply ReLU
+        out += identity
+        out = self.relu(out)
+
+        return out
 
 class Bottleneck(nn.Module):
     # Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
@@ -109,8 +152,8 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        #self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,bias=False)
+        self.conv1 = nn.Conv2d(4, self.inplanes, kernel_size=7, stride=2, padding=3,bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -192,13 +235,12 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
+def _resnetOld(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
 
     model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
 
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls[arch],progress=progress)
         model.load_state_dict(state_dict, strict=False)
     gsf_cnt = 0
     for k, v in model.state_dict().items():
@@ -207,6 +249,52 @@ def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_rati
     print('No. of GSF modules = {}'.format(gsf_cnt))
     return model
 
+def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
+    model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
+
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        
+        # Modifica il primo livello convoluzionale per accettare 4 canali invece di 3
+        if state_dict['conv1.weight'].shape[1] == 3:  # Se il modello è stato pre-addestrato per 3 canali
+            print("Model pre-trained with 3 channels")
+            # Carica i pesi pre-addestrati per i primi 3 canali
+            pretrained_weights = state_dict['conv1.weight']
+            
+            # Crea un nuovo tensor per i pesi di conv1 con 4 canali
+            new_weights = torch.zeros((pretrained_weights.shape[0], 4, 7, 7))  # Crea pesi per 4 canali
+            
+            # Copia i pesi pre-addestrati nei primi 3 canali
+            new_weights[:, :3, :, :] = pretrained_weights
+            
+            # Inizializza il quarto canale
+            nn.init.kaiming_normal_(new_weights[:, 3:, :, :], mode='fan_out', nonlinearity='relu')
+            
+            # Sostituisci i pesi nel state_dict
+            state_dict['conv1.weight'] = new_weights
+
+        # Carica il resto dello stato del modello
+        model.load_state_dict(state_dict, strict=False)
+
+    # Conta i moduli GSF per debug
+    gsf_cnt = 0
+    for k, v in model.state_dict().items():
+        if 'conv3D.weight' in k:
+            gsf_cnt += 1
+    print('No. of GSF modules = {}'.format(gsf_cnt))
+
+    return model
+
+def resnet18(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, **kwargs):
+    r"""ResNet-18 model from
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _resnet('resnet18', BasicBlock, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
+                   gsf_ch_ratio=gsf_ch_ratio, **kwargs)
 
 def resnet50(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, **kwargs):
     r"""ResNet-50 model from

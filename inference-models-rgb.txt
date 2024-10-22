@@ -1,3 +1,0 @@
-MODELS/ENSEMBLE/meccano-RGB-resnet50-200epochs-8Seg/meccano_resnet50_segment8_best.pth.tar resnet50 8
-MODELS/ENSEMBLE/meccano-RGB-120epochs-24Seg/meccano_inceptionv3_segment24_best.pth.tar inceptionv3 24
-MODELS/ENSEMBLE/meccano-RGB-120epochs-32Seg/meccano_inceptionv3_segment32_best.pth.tar inceptionv3 32

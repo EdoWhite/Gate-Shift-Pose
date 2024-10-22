@@ -1,8 +1,0 @@
------Evaluation of ensembles_from_scores/slowfast-rgb.txt and ensembles_from_scores/slowfast-rgb.txt is finished------
-Overall Acc@1 50.97% Acc@5 80.54%
-Overall gmean Acc@1 51.54% Acc@5 80.79%
-Overall Pairs Acc@1 50.97% Acc@5 80.54%
-Overall Pairs (gmean) Acc@1 51.54% Acc@5 80.79%
-Overall HV Acc@1 48.81% Acc@5 75.11%
-Overall HV Pairs Acc@1 48.88% Acc@5 78.41%
-Overall HV Pairs (gmean) Acc@1 49.88% Acc@5 79.24%

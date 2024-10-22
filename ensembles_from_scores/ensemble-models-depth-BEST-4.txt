@@ -1,4 +1,0 @@
-../MODELS/ENSEMBLE/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_best.npy
-../MODELS/ENSEMBLE/meccano-DEPTH-200epochs-48Seg-16B/meccano_inceptionv3_segment48_best.npy
-../MODELS/ENSEMBLE/meccano-DEPTH-300epochs-48Seg-16B/meccano_resnet50_segment48_best.npy
-../MODELS/ENSEMBLE/meccano-DEPTH-resnet101-200epochs-32Seg-16B/meccano_resnet101_segment32_best.npy

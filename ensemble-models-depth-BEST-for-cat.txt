@@ -1,4 +1,0 @@
-../MODELS/ENSEMBLE/meccano-DEPTH-wide_resnet101-300epochs-8Seg-16B/meccano_wide_resnet101_2_segment8_best.pth.tar wide_resnet101_2 8
-../MODELS/ENSEMBLE/meccano-DEPTH-resnet101-200epochs-32Seg-16B/meccano_resnet101_segment32_best.pth.tar resnet101 32
-../MODELS/ENSEMBLE/meccano-DEPTH-60epochs-32Seg/meccano_inceptionv3_segment32_best.pth.tar inceptionv3 32
-../MODELS/ENSEMBLE/meccano-DEPTH-300epochs-48Seg-16B/meccano_resnet50_segment48_best.pth.tar resnet50 48

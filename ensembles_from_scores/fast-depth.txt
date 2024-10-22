@@ -1,1 +1,0 @@
-../MODELS/ENSEMBLE/meccano-DEPTH-200epochs-48Seg-16B/meccano_inceptionv3_segment48_best.npy

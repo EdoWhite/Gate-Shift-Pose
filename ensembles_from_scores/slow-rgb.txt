@@ -1,1 +1,0 @@
-../MODELS/ENSEMBLE/meccano-RGB-resnet50-200epochs-8Seg/meccano_resnet50_segment8_best.npy

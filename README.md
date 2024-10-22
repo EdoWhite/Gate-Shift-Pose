@@ -2,7 +2,7 @@
 
 
 
-# Gate-Shift-Fuse for Video Action Recognition
+# GSF-Pose: A pose-augmented Gate-Shift-Fuse for Video Action Recognition
 
 
 We release the code and trained models of our paper [Gate-Shift-Fuse for Video Action Recognition](https://arxiv.org/pdf/2203.08897.pdf). If you find our work useful for your research, please cite

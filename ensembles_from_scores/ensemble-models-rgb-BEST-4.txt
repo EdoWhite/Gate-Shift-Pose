@@ -1,4 +1,0 @@
-../MODELS/ENSEMBLE/meccano-RGB-120epochs-24Seg/meccano_inceptionv3_segment24_best.npy
-../MODELS/ENSEMBLE/meccano-RGB-120epochs-32Seg/meccano_inceptionv3_segment32_best.npy
-../MODELS/ENSEMBLE/meccano-RGB-inceptionv3_Kinetics-200epochs-32Seg/meccano_inceptionv3_kinetics_segment32_best.npy
-../MODELS/ENSEMBLE/meccano-RGB-inceptionv3-120epochs-64Seg-32B/meccano_inceptionv3_segment64_best.npy

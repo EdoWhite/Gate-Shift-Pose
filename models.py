@@ -186,7 +186,8 @@ class VideoModel(nn.Module):
     def forward(self, input, with_amp: bool=False, idx:int=0, target:int=0):
         #assert isinstance(with_amp, bool)
     
-        base_out = self.base_model(input.view((-1, 3) + input.size()[-2:]))
+        #base_out = self.base_model(input.view((-1, 3) + input.size()[-2:]))
+        base_out = self.base_model(input.view((-1, 4) + input.size()[-2:]))
 
         base_out_logits = base_out if self.new_fc is None else self.new_fc(base_out)
         

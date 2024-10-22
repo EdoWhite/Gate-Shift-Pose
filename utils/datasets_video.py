@@ -50,6 +50,15 @@ def return_meccano():
 
     return filename_imglist_train, filename_imglist_val, filename_imglist_test, root_data, prefix
 
+def return_frfs():
+    root_data = 'FRFS/frames'
+    filename_imglist_train = 'FRFS/train_videofolder.txt'
+    filename_imglist_val = 'FRFS/val_videofolder.txt'
+    filename_imglist_test = 'FRFS/test_videofolder.txt'
+    prefix = '{:05d}.jpg'
+
+    return filename_imglist_train, filename_imglist_val, filename_imglist_test, root_data, prefix
+
 def return_meccano_inference():
     root_data = 'sample'
     filename_imglist_test = 'sample/inference_videofolder.txt'
@@ -59,7 +68,8 @@ def return_meccano_inference():
 
 def return_dataset(dataset, path):
     dict_single = {'something-v1': return_something_v1, 'something-v2': return_something_v2, 
-                   'diving48':return_diving48, 'kinetics400': return_kinetics400, 'meccano': return_meccano, 'meccano-inference': return_meccano_inference}
+                   'diving48':return_diving48, 'kinetics400': return_kinetics400, 'meccano': return_meccano, 'meccano-inference': return_meccano_inference,
+                   'FRFS': return_frfs}
     
     if dataset in dict_single:
             #file_imglist_train, file_imglist_val, filename_imglist_test, root_data, prefix = dict_single[dataset](split)

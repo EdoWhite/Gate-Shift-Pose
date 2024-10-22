@@ -408,7 +408,7 @@ class GroupRandomSizedCrop(object):
             return crop(scale(img_group)), label
 
 
-class Stack(object):
+class StackOld(object):
 
     def __init__(self, roll=False):
         self.roll = roll
@@ -422,6 +422,28 @@ class Stack(object):
                 return np.concatenate([np.array(x)[:, :, ::-1] for x in img_group], axis=2), label
             else:
                 return np.concatenate(img_group, axis=2), label
+            
+class Stack(object):
+
+    def __init__(self, roll=False):
+        self.roll = roll
+
+    def __call__(self, img):
+        img_group, label = img
+        if img_group[0].mode == 'L':
+            # Se in scala di grigi
+            return np.concatenate([np.expand_dims(np.array(x), 2) for x in img_group], axis=2), label
+        elif img_group[0].mode == 'RGB':
+            # Se immagini RGB
+            if self.roll:
+                return np.concatenate([np.array(x)[:, :, ::-1] for x in img_group], axis=2), label
+            else:
+                return np.concatenate([np.array(x) for x in img_group], axis=2), label
+        elif img_group[0].mode == 'RGBA':
+            # Se immagini RGBA (4 canali)
+            return np.concatenate([np.array(x) for x in img_group], axis=2), label
+        else:
+            raise ValueError(f"Unsupported image mode: {img_group[0].mode}")
 
 
 class ToTorchFormatTensor(object):
@@ -429,6 +451,8 @@ class ToTorchFormatTensor(object):
     to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0] """
     
     def __call__(self, pic_label):
+        if pic_label is None:
+            raise ValueError("pic_label is None in ToTorchFormatTensor")
         pic, label = pic_label
         if isinstance(pic, np.ndarray):
             # handle numpy array
@@ -735,7 +759,7 @@ LEVEL_TO_ARG = {
     'TranslateYRel': _translate_rel_level_to_arg,
 }
 
-class AugmentOp:
+class AugmentOpOLD:
 
     def __init__(self, name, prob=0.5, magnitude=10, hparams=None):
         hparams = hparams or _HPARAMS_DEFAULT
@@ -783,7 +807,54 @@ class AugmentOp:
         fs += ')'
         return fs
 
+class AugmentOp:
 
+    def __init__(self, name, prob=0.5, magnitude=10, hparams=None, apply_to_rgb=True):
+        hparams = hparams or _HPARAMS_DEFAULT
+        self.name = name
+        self.aug_fn = NAME_TO_OP[name]
+        self.level_fn = LEVEL_TO_ARG[name]
+        self.prob = prob
+        self.magnitude = magnitude
+        self.hparams = hparams.copy()
+        self.kwargs = dict(
+            fillcolor=hparams['img_mean'] if 'img_mean' in hparams else _FILL,
+            resample=hparams['interpolation'] if 'interpolation' in hparams else _RANDOM_INTERPOLATION,
+        )
+        self.apply_to_rgb = apply_to_rgb  # Whether the augmentation should be applied only to RGB channels
+
+        self.magnitude_std = self.hparams.get('magnitude_std', 0)
+        self.magnitude_max = self.hparams.get('magnitude_max', None)
+
+    def __call__(self, img_group):
+        rgb_img = img_group[:3]  # RGB channels
+        if len(img_group) > 3:
+            heatmap = img_group[3]  # Heatmap channel, assuming it's the 4th channel
+
+        if self.prob < 1.0 and random.random() > self.prob:
+            return img_group
+
+        magnitude = self.magnitude
+        if self.magnitude_std > 0:
+            if self.magnitude_std == float('inf'):
+                magnitude = random.uniform(0, magnitude)
+            elif self.magnitude_std > 0:
+                magnitude = random.gauss(magnitude, self.magnitude_std)
+
+        level_args = self.level_fn(magnitude, self.hparams) if self.level_fn is not None else tuple()
+
+        if self.apply_to_rgb:
+            rgb_img = [self.aug_fn(img, *level_args, **self.kwargs) for img in rgb_img]  # Apply color augmentations to RGB
+            return rgb_img + [heatmap] if len(img_group) > 3 else rgb_img  # Return combined channels (RGB + heatmap)
+        else:
+            img_group = [self.aug_fn(img, *level_args, **self.kwargs) for img in img_group]  # Apply spatial transformations to all channels
+            return img_group
+
+    def __repr__(self):
+        fs = self.__class__.__name__ + f'(name={self.name}, p={self.prob}'
+        fs += f', m={self.magnitude})'
+        return fs
+    
 _RAND_TRANSFORMS = [
     'AutoContrast',
     'Equalize',
@@ -854,8 +925,24 @@ def _select_rand_weights(weight_idx=0, transforms=None):
     probs /= np.sum(probs)
     return probs
 
-
+# Modified
 def rand_augment_ops(magnitude=10, hparams=None, transforms=None):
+    hparams = hparams or _HPARAMS_DEFAULT
+    transforms = transforms or _RAND_TRANSFORMS
+    ops = []
+    
+    for name in transforms:
+        if name in ['AutoContrast', 'Equalize', 'Invert', 'Posterize', 'Solarize', 'Color', 'Contrast', 'Brightness', 'Sharpness']:  # color-based transforms
+            # Apply color transforms only to RGB channels
+            #ops.append(AugmentOp(name, magnitude=magnitude, hparams=hparams, apply_to_rgb=True))
+            pass
+        else:
+            # Apply spatial transforms to all channels (RGB + heatmap)
+            ops.append(AugmentOp(name, magnitude=magnitude, hparams=hparams, apply_to_rgb=False))
+    
+    return ops
+
+def rand_augment_ops_old(magnitude=10, hparams=None, transforms=None):
     hparams = hparams or _HPARAMS_DEFAULT
     transforms = transforms or _RAND_TRANSFORMS
     return [AugmentOp(

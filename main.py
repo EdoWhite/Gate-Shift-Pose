@@ -15,7 +15,7 @@ from utils.transforms import *
 from utils.opts import parser
 import utils.CosineAnnealingLR as CosineAnnealingLR
 import utils.datasets_video as datasets_video
-from utils.dataset import VideoDataset
+from utils.dataset import VideoDataset, VideoDatasetPoses
 from datetime import datetime
 import os
 import numpy
@@ -63,6 +63,12 @@ def main():
         num_class = 61
         args.rgb_prefix = ''
         rgb_read_format = "{:05d}.jpg"
+
+    # MECCANO dataset
+    elif args.dataset == 'FRFS':
+        num_class = 2
+        args.rgb_prefix = ''
+        rgb_read_format = "{:05d}.jpg"
     
     # skate dataset
     elif args.dataset == 'skate':
@@ -75,7 +81,7 @@ def main():
     global model_dir
 
     #model_dir = os.path.join('experiments', args.dataset, args.arch, datetime.now().strftime('%b%d_%H-%M-%S')+'_'+args.experiment_name)
-    model_dir = os.path.join('experiments', args.dataset, args.arch, datetime.now().strftime('%b%d_%H-%M-%S')+'_'+args.experiment_name)
+    model_dir = os.path.join(args.experiment_path, 'experiments', args.dataset, args.arch, datetime.now().strftime('%b%d_%H-%M-%S')+'_'+args.experiment_name)
     os.makedirs(model_dir)
     os.makedirs(os.path.join(model_dir, args.root_log))
 
@@ -146,6 +152,22 @@ def main():
         # set num features of last layer
         num_ftrs = model.new_fc.in_features
         model.new_fc = nn.Linear(num_ftrs, num_class)
+
+        for param in model.new_fc.parameters():
+            param.requires_grad = True
+
+        if args.feature_extractor == True:
+            # Unfreeze last N layers (including new_fc)
+            N = 2  # Define how many final layers to unfreeze in addition to new_fc
+            count = 0
+            # Iterate in reverse order and unfreeze last N layers
+            for name, param in reversed(list(model.named_parameters())):
+                if count >= N:
+                    break
+                param.requires_grad = True
+                count += 1
+
+            print(f'Unfrozen the last {N} layers for feature extraction')
     # END
     
     crop_size = model.crop_size
@@ -189,7 +211,7 @@ def main():
         else:
             print(("=> no checkpoint found at '{}'".format(args.resume)))
     
-    train_transform = torchvision.transforms.Compose([
+    train_transform_old = torchvision.transforms.Compose([
                         GroupScaleHW(h=360, w=640),
                         rand_augment_transform(config_str='rand-m9-mstd0.5', 
                                                 hparams={'translate_const': 117, 'img_mean': (124, 116, 104)}
@@ -199,16 +221,35 @@ def main():
                         ToTorchFormatTensor(),
                         normalize,
                                                     ])
+    
+    # Removed Random Augmentation
+    train_transform = torchvision.transforms.Compose([
+        GroupScaleHW(h=360, w=640),
+        lambda x: print_and_return(x, "After GroupScaleHW"),
+        train_augmentation,
+        lambda x: print_and_return(x, "After train_augmentation"),
+        Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+        lambda x: print_and_return(x, "After Stack"),
+        ToTorchFormatTensor(),
+        lambda x: print_and_return(x, "After ToTorchFormatTensor"),
+        normalize,
+        lambda x: print_and_return(x, "After normalize"),
+    ])
+
+    def print_and_return(x, msg):
+        print(f"{msg}: {type(x)}")
+        return x
+    
 
     train_loader = torch.utils.data.DataLoader(
-        VideoDataset(args.root_path, args.train_list, num_segments=args.num_segments,
+        VideoDatasetPoses(args.root_path, args.train_list, num_segments=args.num_segments,
                      image_tmpl=args.rgb_prefix+rgb_read_format,
                      transform=train_transform),
         batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True)
     
     val_loader = torch.utils.data.DataLoader(
-        VideoDataset(args.root_path, args.val_list, num_segments=args.num_segments,
+        VideoDatasetPoses(args.root_path, args.val_list, num_segments=args.num_segments,
                      image_tmpl=args.rgb_prefix+rgb_read_format,
                      random_shift=False,
                      transform=torchvision.transforms.Compose([
@@ -222,10 +263,26 @@ def main():
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True, drop_last=False)
 
+    # Class distribution
+    num_pos = 276
+    num_neg = 141
+
+    # Calculate class weights inversely proportional to the frequency
+    weight_pos = 1.0 / num_pos
+    weight_neg = 1.0 / num_neg
+
+    # Normalize weights to sum to 1 (optional, but common practice)
+    weight_sum = weight_pos + weight_neg
+    weight_pos /= weight_sum
+    weight_neg /= weight_sum
+
+    # Tensor of weights for [class 0, class 1]
+    class_weights = torch.tensor([weight_neg, weight_pos]).cuda()
+
     # define loss function (criterion) and optimizer
     if args.loss_type == 'nll':
         print('Standard CE loss')
-        criterion = torch.nn.CrossEntropyLoss().cuda()
+        criterion = torch.nn.CrossEntropyLoss(weight=class_weights).cuda()
     else:
         raise ValueError("Unknown loss type")
 
@@ -285,7 +342,7 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
         # measure data loading time
         data_time.update(time.time() - end)
         
-        target = target.cuda()
+        target = target.cuda().long()
         input_var = input.cuda()
         
         # compute output
@@ -297,10 +354,10 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
             scaler.scale(loss).backward()
         
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(output.data, target, topk=(1,5))
+        prec1, prec2 = accuracy(output.data, target, topk=(1,2))
         losses.update(loss_summ.data, input.size(0))
         top1.update(prec1, input.size(0))
-        top5.update(prec5, input.size(0))
+        top5.update(prec2, input.size(0))
 
         if (i+1) % args.iter_size == 0:
             # scale down gradients when iter size is functioning
@@ -324,7 +381,7 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
                         'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                         'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                         'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                        'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                        'Acc@2 {top5.val:.3f} ({top5.avg:.3f})'.format(
                 epoch, i, len(train_loader), batch_time=batch_time,
                 data_time=data_time, loss=losses, top1=top1, top5=top5, lr=optimizer.param_groups[-1]['lr']))
             writer.add_scalar('train/batch_loss', losses.avg, epoch * len(train_loader) + i)
@@ -334,7 +391,7 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
             log.flush()
     writer.add_scalar('train/loss', losses.avg, epoch + 1)
     writer.add_scalar('train/top1Accuracy', top1.avg, epoch + 1)
-    writer.add_scalar('train/top5Accuracy', top5.avg, epoch + 1)
+    writer.add_scalar('train/top2Accuracy', top5.avg, epoch + 1)
     return top1.avg
 
 
@@ -351,19 +408,21 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
     with torch.no_grad():
         for i, (input, target) in enumerate(val_loader):
             
-            target = target.cuda()
+            target = target.cuda().long()
             input_var = input.cuda()
 
             # compute output
             with amp.autocast(enabled=args.with_amp):
                 output = model(input_var, args.with_amp)
                 loss = criterion(output, target)
+                print("DEBUGGING VALIDATION")
+                print("output: {}, label: {}".format(output, target))
 
             # measure accuracy and record loss
             losses.update(loss.data, input.size(0))
-            prec1, prec5 = accuracy(output.data, target, topk=(1,5))
+            prec1, prec2 = accuracy(output.data, target, topk=(1,2))
             top1.update(prec1, input.size(0))
-            top5.update(prec5, input.size(0))
+            top5.update(prec2, input.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -374,14 +433,14 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
                             'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                             'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                             'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                            'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                            'Acc@2 {top5.val:.3f} ({top5.avg:.3f})'.format(
                             i, len(val_loader), batch_time=batch_time, loss=losses,
                             top1=top1, top5=top5))
                 print(output)
                 log.write(output + '\n')
                 log.flush()
 
-    output = ('Validation Results: Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f} Loss {loss.avg:.5f}'
+    output = ('Validation Results: Acc@1 {top1.avg:.3f} Acc@2 {top5.avg:.3f} Loss {loss.avg:.5f}'
             .format(top1=top1, top5=top5, loss=losses))
     print(output)
     output_best = '\nBest Prec@1: %.3f'%(best_prec1)

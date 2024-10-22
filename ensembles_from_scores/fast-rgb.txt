@@ -1,1 +1,0 @@
-../MODELS/ENSEMBLE/meccano-RGB-inceptionv3-120epochs-64Seg-32B/meccano_inceptionv3_segment64_best.npy
