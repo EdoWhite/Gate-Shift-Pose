@@ -225,15 +225,15 @@ def main():
     # Removed Random Augmentation
     train_transform = torchvision.transforms.Compose([
         GroupScaleHW(h=360, w=640),
-        lambda x: print_and_return(x, "After GroupScaleHW"),
+        #lambda x: print_and_return(x, "After GroupScaleHW"),
         train_augmentation,
-        lambda x: print_and_return(x, "After train_augmentation"),
+        #lambda x: print_and_return(x, "After train_augmentation"),
         Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-        lambda x: print_and_return(x, "After Stack"),
+        #lambda x: print_and_return(x, "After Stack"),
         ToTorchFormatTensor(),
-        lambda x: print_and_return(x, "After ToTorchFormatTensor"),
+        #lambda x: print_and_return(x, "After ToTorchFormatTensor"),
         normalize,
-        lambda x: print_and_return(x, "After normalize"),
+        #lambda x: print_and_return(x, "After normalize"),
     ])
 
     def print_and_return(x, msg):
@@ -415,8 +415,8 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
             with amp.autocast(enabled=args.with_amp):
                 output = model(input_var, args.with_amp)
                 loss = criterion(output, target)
-                print("DEBUGGING VALIDATION")
-                print("output: {}, label: {}".format(output, target))
+                #print("DEBUGGING VALIDATION")
+                #print("output: {}, label: {}".format(output, target))
 
             # measure accuracy and record loss
             losses.update(loss.data, input.size(0))

@@ -724,6 +724,7 @@ class VideoDatasetPoses(data.Dataset):
 
         self._parse_list()
 
+    """
     def _load_image_with_pose(self, directory, idx):
         try:
             # Load RGB frame
@@ -749,10 +750,11 @@ class VideoDatasetPoses(data.Dataset):
         except Exception as e:
             print(f"Error loading image or pose: {e}")
             return [Image.open(os.path.join(self.root_path, directory, self.image_tmpl.format(1))).convert('RGB')]
-
+    """
+    
     def _load_image(self, directory, idx):
         try:
-            return [Image.open(os.path.join(self.root_path, directory, self.image_tmpl.format(idx))).convert('RGB')]
+            return [Image.open(os.path.join(self.root_path, directory, self.image_tmpl.format(idx))).convert('RGB').resize((640,360))]
         except Exception:
             print('error loading image:', os.path.join(self.root_path, directory, self.image_tmpl.format(idx)))
             return [Image.open(os.path.join(self.root_path, directory, self.image_tmpl.format(1))).convert('RGB')]
@@ -810,8 +812,10 @@ class VideoDatasetPoses(data.Dataset):
         if heatmap.shape[:2] != img_np.shape[:2]:
             heatmap = cv2.resize(heatmap, (img_np.shape[1], img_np.shape[0]))
 
+        print("try to execute line 813 Dataset.py")
         combined = np.concatenate((img_np, heatmap), axis=-1)  # Append heatmap as an additional channel
-        
+        print("executed line 813 Dataset.py") 
+
         # Ensure that the combined array is in a valid format for PIL
         combined_img = Image.fromarray(combined.astype(np.uint8), mode='RGBA')  # Convert back to PIL image, assuming 4 channels
 
@@ -1152,18 +1156,22 @@ class VideoDatasetPoses(data.Dataset):
             
             for seg_ind in indices:
                 p = int(seg_ind)
+                # seg_imgs contains more than one image
                 seg_imgs = self._load_image(record.path, p)
                 images.extend(seg_imgs)
 
                 # Run pose detection and generate heatmaps
                 for img in seg_imgs:
-                    result = self.pose_model(img)
-
+                    print("\n")
+                    print("Computing Poses")
+                    print("image size: {}".format(img.size))
+                    result = self.pose_model.predict(img, conf=0.5)
+                    print("\n")
                     for res in result:
                         keypoints = res.keypoints
 
                     if keypoints is not None and keypoints.shape[1] > 0:
-                        heatmap = self.generate_pose_heatmap(keypoints[0].xy)
+                        heatmap = self.generate_pose_heatmap(keypoints[0].xy) # Get only the poses of the first person detected
                         pose_heatmaps.append(heatmap)
                     else:
                         pose_heatmaps.append(self.generate_blank_heatmap())
