@@ -15,7 +15,7 @@ class VideoModel(nn.Module):
                  consensus_type='avg', before_softmax=True,
                  dropout=0.5, crop_num=1, print_spec=True,
                  gsf=True, gsf_ch_ratio=100,
-                 target_transform=None):
+                 target_transform=None, num_channels=3):
         super(VideoModel, self).__init__()
         self.num_segments = num_segments
         self.before_softmax = before_softmax
@@ -25,6 +25,7 @@ class VideoModel(nn.Module):
         self.gsf = gsf
         self.gsf_ch_ratio = gsf_ch_ratio
         self.target_transform = target_transform
+        self.num_channels = num_channels
 
         if not before_softmax and consensus_type != 'avg':
             raise ValueError("Only avg consensus can be used after Softmax")
@@ -74,7 +75,7 @@ class VideoModel(nn.Module):
             if self.gsf:
                 import backbones.resnetGSFModels as resnet_models
                 self.base_model = getattr(resnet_models, base_model)(pretrained=True, num_segments=self.num_segments,
-                                                                     gsf_ch_ratio=self.gsf_ch_ratio)
+                                                                     gsf_ch_ratio=self.gsf_ch_ratio, num_channels=self.num_channels)
             else:
                 import torchvision.models.resnet as resnet_models
                 self.base_model = getattr(resnet_models, base_model)(pretrained=True)
@@ -187,7 +188,7 @@ class VideoModel(nn.Module):
         #assert isinstance(with_amp, bool)
     
         #base_out = self.base_model(input.view((-1, 3) + input.size()[-2:]))
-        base_out = self.base_model(input.view((-1, 4) + input.size()[-2:]))
+        base_out = self.base_model(input.view((-1, self.num_channels) + input.size()[-2:]))
 
         base_out_logits = base_out if self.new_fc is None else self.new_fc(base_out)
         

@@ -133,7 +133,7 @@ class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
-                 norm_layer=None, num_segments=8, gsf_ch_ratio=25,):
+                 norm_layer=None, num_segments=8, gsf_ch_ratio=25, num_channels=3):
         super(ResNet, self).__init__()
         
         if norm_layer is None:
@@ -152,8 +152,8 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        #self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,bias=False)
-        self.conv1 = nn.Conv2d(4, self.inplanes, kernel_size=7, stride=2, padding=3,bias=False)
+        # Modified to n nun_channels
+        self.conv1 = nn.Conv2d(num_channels, self.inplanes, kernel_size=7, stride=2, padding=3,bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -235,8 +235,10 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-def _resnetOld(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
-
+def _resnetOriginal(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
+    """
+    Used to load standard ResNet checkpoints
+    """
     model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
 
     if pretrained:
@@ -249,8 +251,11 @@ def _resnetOld(arch, block, layers, pretrained, progress, num_segments, gsf_ch_r
     print('No. of GSF modules = {}'.format(gsf_cnt))
     return model
 
-def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, **kwargs):
-    model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, **kwargs)
+def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_ratio=25, num_channels=3, **kwargs):
+    """
+    Used to load 3-channels ResNet checkpoints into an a model with additional channels
+    """
+    model = ResNet(block, layers, num_segments=num_segments, gsf_ch_ratio=gsf_ch_ratio, num_channels=num_channels, **kwargs)
 
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
@@ -285,7 +290,7 @@ def _resnet(arch, block, layers, pretrained, progress, num_segments, gsf_ch_rati
 
     return model
 
-def resnet18(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, **kwargs):
+def resnet18(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, num_channels=3, **kwargs):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
@@ -293,10 +298,15 @@ def resnet18(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, *
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet18', BasicBlock, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
+    if num_channels == 3:
+        return _resnetOriginal('resnet18', BasicBlock, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
                    gsf_ch_ratio=gsf_ch_ratio, **kwargs)
+    else:
+        return _resnet('resnet18', BasicBlock, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
+                   gsf_ch_ratio=gsf_ch_ratio, num_channels=num_channels, **kwargs)
+    
 
-def resnet50(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, **kwargs):
+def resnet50(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, num_channels=3, **kwargs):
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
@@ -304,8 +314,12 @@ def resnet50(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, *
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
+    if num_channels == 3:
+        return _resnetOriginal('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
                    gsf_ch_ratio=gsf_ch_ratio, **kwargs)
+    else:
+        return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress, num_segments=num_segments,
+                   gsf_ch_ratio=gsf_ch_ratio, num_channels=num_channels, **kwargs)
 
 
 def resnet101(pretrained=False, progress=True, num_segments=8, gsf_ch_ratio=25, **kwargs):

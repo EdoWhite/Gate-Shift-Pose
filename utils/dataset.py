@@ -695,7 +695,7 @@ class VideoDataset(data.Dataset):
     def __len__(self):
         return len(self.video_list)
 
-# Computes the poses
+# Load the images and compute the poses
 class VideoDatasetPoses(data.Dataset):
     def __init__(self, root_path, list_file,
                  num_segments=3,
@@ -1162,11 +1162,11 @@ class VideoDatasetPoses(data.Dataset):
 
                 # Run pose detection and generate heatmaps
                 for img in seg_imgs:
-                    print("\n")
-                    print("Computing Poses")
-                    print("image size: {}".format(img.size))
-                    result = self.pose_model.predict(img, conf=0.5)
-                    print("\n")
+                    #print("\n")
+                    #print("Computing Poses")
+                    #print("image size: {}".format(img.size))
+                    result = self.pose_model.predict(img, conf=0.5, half=True)
+                    #print("\n")
                     for res in result:
                         keypoints = res.keypoints
 

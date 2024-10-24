@@ -64,7 +64,7 @@ def main():
         args.rgb_prefix = ''
         rgb_read_format = "{:05d}.jpg"
 
-    # MECCANO dataset
+    # FRFS dataset
     elif args.dataset == 'FRFS':
         num_class = 2
         args.rgb_prefix = ''
@@ -128,7 +128,7 @@ def main():
     model = VideoModel(num_class=num_class, num_segments=args.num_segments,
                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
-                       target_transform=target_transforms)
+                       target_transform=target_transforms, num_channels=args.num_channels)
     
     # FEATURE EXTRACTOR MODE
     if (args.finetune == True) or (args.feature_extractor == True):
@@ -222,7 +222,7 @@ def main():
                         normalize,
                                                     ])
     
-    # Removed Random Augmentation
+    # Removed Random Augmentation!
     train_transform = torchvision.transforms.Compose([
         GroupScaleHW(h=360, w=640),
         #lambda x: print_and_return(x, "After GroupScaleHW"),
@@ -240,28 +240,51 @@ def main():
         print(f"{msg}: {type(x)}")
         return x
     
+    if args.use_poses:
+        print("Uses Poses as Additional Modality")
+        train_loader = torch.utils.data.DataLoader(
+            VideoDatasetPoses(args.root_path, args.train_list, num_segments=args.num_segments,
+                        image_tmpl=args.rgb_prefix+rgb_read_format,
+                        transform=train_transform),
+            batch_size=args.batch_size, shuffle=True,
+            num_workers=args.workers, pin_memory=True)
+        
+        val_loader = torch.utils.data.DataLoader(
+            VideoDatasetPoses(args.root_path, args.val_list, num_segments=args.num_segments,
+                        image_tmpl=args.rgb_prefix+rgb_read_format,
+                        random_shift=False,
+                        transform=torchvision.transforms.Compose([
+                                GroupScale(int(scale_size)),
+                                GroupCenterCrop(crop_size),
+                                Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+                                ToTorchFormatTensor(),
+                                normalize,
+                                                                ]), 
+                        ),
+            batch_size=args.batch_size, shuffle=False,
+            num_workers=args.workers, pin_memory=True, drop_last=False)
+    else:
+        train_loader = torch.utils.data.DataLoader(
+            VideoDataset(args.root_path, args.train_list, num_segments=args.num_segments,
+                        image_tmpl=args.rgb_prefix+rgb_read_format,
+                        transform=train_transform),
+            batch_size=args.batch_size, shuffle=True,
+            num_workers=args.workers, pin_memory=True)
 
-    train_loader = torch.utils.data.DataLoader(
-        VideoDatasetPoses(args.root_path, args.train_list, num_segments=args.num_segments,
-                     image_tmpl=args.rgb_prefix+rgb_read_format,
-                     transform=train_transform),
-        batch_size=args.batch_size, shuffle=True,
-        num_workers=args.workers, pin_memory=True)
-    
-    val_loader = torch.utils.data.DataLoader(
-        VideoDatasetPoses(args.root_path, args.val_list, num_segments=args.num_segments,
-                     image_tmpl=args.rgb_prefix+rgb_read_format,
-                     random_shift=False,
-                     transform=torchvision.transforms.Compose([
-                               GroupScale(int(scale_size)),
-                               GroupCenterCrop(crop_size),
-                               Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-                               ToTorchFormatTensor(),
-                               normalize,
-                                                             ]), 
-                    ),
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True, drop_last=False)
+        val_loader = torch.utils.data.DataLoader(
+            VideoDataset(args.root_path, args.val_list, num_segments=args.num_segments,
+                        image_tmpl=args.rgb_prefix+rgb_read_format,
+                        random_shift=False,
+                        transform=torchvision.transforms.Compose([
+                                GroupScale(int(scale_size)),
+                                GroupCenterCrop(crop_size),
+                                Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+                                ToTorchFormatTensor(),
+                                normalize,
+                                                                ]), 
+                        ),
+            batch_size=args.batch_size, shuffle=False,
+            num_workers=args.workers, pin_memory=True, drop_last=False)
 
     # Class distribution
     num_pos = 276
