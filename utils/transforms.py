@@ -758,8 +758,8 @@ LEVEL_TO_ARG = {
     'TranslateXRel': _translate_rel_level_to_arg,
     'TranslateYRel': _translate_rel_level_to_arg,
 }
-
-class AugmentOpOLD:
+# Original Function
+class AugmentOp:
 
     def __init__(self, name, prob=0.5, magnitude=10, hparams=None):
         hparams = hparams or _HPARAMS_DEFAULT
@@ -807,7 +807,8 @@ class AugmentOpOLD:
         fs += ')'
         return fs
 
-class AugmentOp:
+# Modified Function, to fix, not working
+class AugmentOpMOD:
 
     def __init__(self, name, prob=0.5, magnitude=10, hparams=None, apply_to_rgb=True):
         hparams = hparams or _HPARAMS_DEFAULT
@@ -925,8 +926,8 @@ def _select_rand_weights(weight_idx=0, transforms=None):
     probs /= np.sum(probs)
     return probs
 
-# Modified
-def rand_augment_ops(magnitude=10, hparams=None, transforms=None):
+# Modified, to fix
+def rand_augment_ops_mod(magnitude=10, hparams=None, transforms=None):
     hparams = hparams or _HPARAMS_DEFAULT
     transforms = transforms or _RAND_TRANSFORMS
     ops = []
@@ -942,7 +943,8 @@ def rand_augment_ops(magnitude=10, hparams=None, transforms=None):
     
     return ops
 
-def rand_augment_ops_old(magnitude=10, hparams=None, transforms=None):
+# Original Function
+def rand_augment_ops(magnitude=10, hparams=None, transforms=None):
     hparams = hparams or _HPARAMS_DEFAULT
     transforms = transforms or _RAND_TRANSFORMS
     return [AugmentOp(

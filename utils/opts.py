@@ -12,6 +12,7 @@ parser.add_argument('--store_name', type=str, default="")
 # ========================= Model Configs ==========================
 parser.add_argument('--use_poses', default=False, action="store_true")
 parser.add_argument('--num_channels', type=int, default=3)
+parser.add_argument('--rand_augment', default=False, action="store_true")
 
 parser.add_argument('--finetune', default=False, action="store_true")
 parser.add_argument('--feature_extractor', default=False, action="store_true")

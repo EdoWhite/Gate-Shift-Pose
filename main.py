@@ -210,31 +210,33 @@ def main():
                   .format(args.evaluate, checkpoint['epoch'])))
         else:
             print(("=> no checkpoint found at '{}'".format(args.resume)))
-    
-    train_transform_old = torchvision.transforms.Compose([
-                        GroupScaleHW(h=360, w=640),
-                        rand_augment_transform(config_str='rand-m9-mstd0.5', 
-                                                hparams={'translate_const': 117, 'img_mean': (124, 116, 104)}
-                                              ),
-                        train_augmentation,
-                        Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-                        ToTorchFormatTensor(),
-                        normalize,
-                                                    ])
-    
-    # Removed Random Augmentation!
-    train_transform = torchvision.transforms.Compose([
-        GroupScaleHW(h=360, w=640),
-        #lambda x: print_and_return(x, "After GroupScaleHW"),
-        train_augmentation,
-        #lambda x: print_and_return(x, "After train_augmentation"),
-        Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-        #lambda x: print_and_return(x, "After Stack"),
-        ToTorchFormatTensor(),
-        #lambda x: print_and_return(x, "After ToTorchFormatTensor"),
-        normalize,
-        #lambda x: print_and_return(x, "After normalize"),
-    ])
+
+    if args.rand_augment:
+        print("Using Random Augmentation")
+        train_transform = torchvision.transforms.Compose([
+                            GroupScaleHW(h=360, w=640),
+                            rand_augment_transform(config_str='rand-m9-mstd0.5', 
+                                                    hparams={'translate_const': 117, 'img_mean': (124, 116, 104)}
+                                                ),
+                            train_augmentation,
+                            Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+                            ToTorchFormatTensor(),
+                            normalize,
+                                                        ])
+    else:
+        # Removed Random Augmentation!
+        train_transform = torchvision.transforms.Compose([
+            GroupScaleHW(h=360, w=640),
+            #lambda x: print_and_return(x, "After GroupScaleHW"),
+            train_augmentation,
+            #lambda x: print_and_return(x, "After train_augmentation"),
+            Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+            #lambda x: print_and_return(x, "After Stack"),
+            ToTorchFormatTensor(),
+            #lambda x: print_and_return(x, "After ToTorchFormatTensor"),
+            normalize,
+            #lambda x: print_and_return(x, "After normalize"),
+        ])
 
     def print_and_return(x, msg):
         print(f"{msg}: {type(x)}")
