@@ -9,6 +9,45 @@ import torch
 import re
 # from skimage.transform import resize, rotate
 
+class Transform4ChannelWrapper:
+    def __init__(self, transform):
+        self.transform = transform
+
+    def __call__(self, img_tuple):
+        # Verifica che l'input sia una tupla (img_group, label)
+        if isinstance(img_tuple, tuple):
+            # Applica la sequenza di trasformazioni alla tupla
+            return self._apply_transform(img_tuple)
+        else:
+            raise ValueError("L'input deve essere una tupla (img_group, label)")
+
+    def _apply_transform(self, img_tuple):
+        # Applica ogni trasformazione nella sequenza, saltando quelle incompatibili
+        img_group, label = img_tuple
+        for t in self.transform.transforms:
+            if self._is_compatible_with_4_channels(t):
+                # Applica la trasformazione solo se compatibile con 4 canali
+                img_group, label = t((img_group, label))
+        return img_group, label
+
+    def _is_compatible_with_4_channels(self, transform):
+        print(transform.__class__.__name__)
+        # Definisce le trasformazioni incompatibili
+        incompatible_transforms = [
+            "AutoContrast", "Equalize","Posterize", "Solarize", "SolarizeAdd", "PosterizeIncreasing", "SolarizeIncreasing",
+            "Color", "ColorIncreasing", "Contrast", "ContrastIncreasing", "SolarizeAdd", "Invert",
+            "Brightness", "BrightnessIncreasing", "Sharpness", "SharpnessIncreasing"
+        ]
+        # Se `transform` è un'istanza di RandAugment, verifica le singole operazioni
+        if isinstance(transform, RandAugment):
+            for op in transform.ops:
+                if any(op.__class__.__name__ == name for name in incompatible_transforms):
+                    return False
+            return True
+        
+        # Per altre trasformazioni, verifica il nome della classe
+        return not any(transform.__class__.__name__ == name for name in incompatible_transforms)
+
 
 class GroupRandomCrop(object):
     def __init__(self, size):
@@ -947,8 +986,7 @@ def rand_augment_ops_mod(magnitude=10, hparams=None, transforms=None):
 def rand_augment_ops(magnitude=10, hparams=None, transforms=None):
     hparams = hparams or _HPARAMS_DEFAULT
     transforms = transforms or _RAND_TRANSFORMS
-    return [AugmentOp(
-        name, prob=0.5, magnitude=magnitude, hparams=hparams) for name in transforms]
+    return [AugmentOp(name, prob=0.5, magnitude=magnitude, hparams=hparams) for name in transforms]
 
 
 class RandAugment:

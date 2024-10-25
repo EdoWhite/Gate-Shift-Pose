@@ -212,8 +212,8 @@ def main():
             print(("=> no checkpoint found at '{}'".format(args.resume)))
 
     if args.rand_augment:
-        print("Using Random Augmentation")
-        train_transform = torchvision.transforms.Compose([
+        print("Using Random Augmentation (only tranformations compatible with 4 channels)")
+        train_transform = Transform4ChannelWrapper(torchvision.transforms.Compose([
                             GroupScaleHW(h=360, w=640),
                             rand_augment_transform(config_str='rand-m9-mstd0.5', 
                                                     hparams={'translate_const': 117, 'img_mean': (124, 116, 104)}
@@ -222,25 +222,16 @@ def main():
                             Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
                             ToTorchFormatTensor(),
                             normalize,
-                                                        ])
+                                                        ]))
     else:
-        # Removed Random Augmentation!
+        # No random augmentation
         train_transform = torchvision.transforms.Compose([
             GroupScaleHW(h=360, w=640),
-            #lambda x: print_and_return(x, "After GroupScaleHW"),
             train_augmentation,
-            #lambda x: print_and_return(x, "After train_augmentation"),
             Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-            #lambda x: print_and_return(x, "After Stack"),
             ToTorchFormatTensor(),
-            #lambda x: print_and_return(x, "After ToTorchFormatTensor"),
             normalize,
-            #lambda x: print_and_return(x, "After normalize"),
         ])
-
-    def print_and_return(x, msg):
-        print(f"{msg}: {type(x)}")
-        return x
     
     if args.use_poses:
         print("Uses Poses as Additional Modality")
