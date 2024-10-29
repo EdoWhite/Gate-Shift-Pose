@@ -1165,7 +1165,7 @@ class VideoDatasetPoses(data.Dataset):
                     #print("\n")
                     #print("Computing Poses")
                     #print("image size: {}".format(img.size))
-                    result = self.pose_model.predict(img, conf=0.5, half=True)
+                    result = self.pose_model.predict(img, conf=0.7, half=True, max_det=1)
                     #print("\n")
                     for res in result:
                         keypoints = res.keypoints

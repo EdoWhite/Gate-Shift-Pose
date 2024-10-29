@@ -10,7 +10,7 @@ import torch.optim
 import torchvision.transforms as transforms
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.tensorboard import SummaryWriter
-from models import VideoModel
+from models import VideoModel, VideoModelLateFusion
 from utils.transforms import *
 from utils.opts import parser
 import utils.CosineAnnealingLR as CosineAnnealingLR
@@ -125,10 +125,16 @@ def main():
     print('storing name: ' + args.store_name)
 
     # Load the base model
-    model = VideoModel(num_class=num_class, num_segments=args.num_segments,
+    if args.late_fusion_poses:
+        model = VideoModelLateFusion(num_class=num_class, num_segments=args.num_segments,
                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
                        target_transform=target_transforms, num_channels=args.num_channels)
+    else:
+        model = VideoModel(num_class=num_class, num_segments=args.num_segments,
+                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
+                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
+                        target_transform=target_transforms, num_channels=args.num_channels)
     
     # FEATURE EXTRACTOR MODE
     if (args.finetune == True) or (args.feature_extractor == True):
@@ -233,8 +239,8 @@ def main():
             normalize,
         ])
     
-    if args.use_poses:
-        print("Uses Poses as Additional Modality")
+    if args.early_fusion_poses:
+        print("Uses Early-Fusion Poses")
         train_loader = torch.utils.data.DataLoader(
             VideoDatasetPoses(args.root_path, args.train_list, num_segments=args.num_segments,
                         image_tmpl=args.rgb_prefix+rgb_read_format,
