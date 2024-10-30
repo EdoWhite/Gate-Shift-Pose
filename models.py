@@ -7,6 +7,7 @@ from scipy.ndimage import zoom
 import os, sys
 from torch.cuda import amp
 from poseModel import PoseModel  # Importa PoseModel per la fusione delle pose
+import time
 
 # EDITED by white
 
@@ -401,28 +402,44 @@ class VideoModelLateFusion(nn.Module):
         ]
 
     def forward(self, input_rgb, with_amp: bool=False, idx:int=0, target:int=0):
+        start_time = time.time()
 
         # [256, 3, 224, 224] --> [batch * num_segments, 3, 224, 224]
         input_rgb_reshaped = input_rgb.view((-1, self.num_channels) + input_rgb.size()[-2:]).cuda()
-        
+        rgb_time = time.time()
+        print(f"Tempo di preparazione dell'input RGB: {rgb_time - start_time:.4f} sec")
+
         base_out_rgb = self.base_model(input_rgb_reshaped)
         #print(f"base_out_rgb shape: {base_out_rgb.shape}")
+        rgb_inference_time = time.time()
+        print(f"Tempo di inferenza del modello RGB: {rgb_inference_time - rgb_time:.4f} sec")
         
         base_out_pose = self.pose_model(input_rgb_reshaped)
         #print(f"base_out_pose shape: {base_out_pose.shape}")
+        pose_inference_time = time.time()
+        print(f"Tempo di inferenza del modello delle pose: {pose_inference_time - rgb_inference_time:.4f} sec")
         
         # Fusione tardiva (concatenazione delle feature RGB e delle pose)
         combined_out = torch.cat((base_out_rgb, base_out_pose), dim=1).cuda()
         #print(f"combined_out shape: {combined_out.shape}")
+        fusion_time = time.time()
+        print(f"Tempo di fusione delle feature RGB e pose: {fusion_time - pose_inference_time:.4f} sec")
 
         # Classificazione finale
         base_out_logits = self.new_fc(combined_out)
+        classification_time = time.time()
+        print(f"Tempo di classificazione finale: {classification_time - fusion_time:.4f} sec")
 
         if not self.before_softmax:
             base_out_logits = self.softmax(base_out_logits)
             
         base_out_logits = base_out_logits.view((-1, self.num_segments) + base_out_logits.size()[1:]).cuda()
         output = self.consensus(base_out_logits).cuda()
+        end_time = time.time()
+        print(f"Tempo di consenso finale: {end_time - classification_time:.4f} sec")
+
+        # Tempo totale per la forward pass
+        print(f"Tempo totale per forward: {end_time - start_time:.4f} sec\n")
         
         return output
     

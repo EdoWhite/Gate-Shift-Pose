@@ -720,7 +720,7 @@ class VideoDatasetPoses(data.Dataset):
         self.dense_sample = dense_sample
         self.mode = mode
         self.random_shuffling = random_shuffling
-        self.pose_model = YOLO('/home/clusterusers/edbianchi/POSE/yolov8m-pose.pt')
+        self.pose_model = YOLO('/data/users/edbianchi/POSE/yolo11l-pose.pt')
 
         self._parse_list()
 
@@ -1165,7 +1165,7 @@ class VideoDatasetPoses(data.Dataset):
                     #print("\n")
                     #print("Computing Poses")
                     #print("image size: {}".format(img.size))
-                    result = self.pose_model.predict(img, conf=0.7, half=True, max_det=1)
+                    result = self.pose_model.predict(img, conf=0.8, max_det=1)
                     #print("\n")
                     for res in result:
                         keypoints = res.keypoints
