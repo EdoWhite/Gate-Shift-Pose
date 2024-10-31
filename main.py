@@ -10,12 +10,12 @@ import torch.optim
 import torchvision.transforms as transforms
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.tensorboard import SummaryWriter
-from models import VideoModel, VideoModelLateFusion
+from models import VideoModel, VideoModelLateFusion, VideoModelLateFusionFast
 from utils.transforms import *
 from utils.opts import parser
 import utils.CosineAnnealingLR as CosineAnnealingLR
 import utils.datasets_video as datasets_video
-from utils.dataset import VideoDataset, VideoDatasetPoses
+from utils.dataset import VideoDataset, VideoDatasetPoses, VideoDatasetPosesFast
 from datetime import datetime
 import os
 import numpy
@@ -104,10 +104,6 @@ def main():
                             args.iter_size, args.warmup, args.epochs, args.lr))
     note_fl.close()
 
-    #### ADD WANDB SUPPORT ####
-    #wandb.login()
-    #wandb.init(project='MECCANO-GSF', sync_tensorboard=True)
-    ###########################
 
     writer = SummaryWriter(model_dir)
 
@@ -130,6 +126,13 @@ def main():
                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
                        target_transform=target_transforms, num_channels=args.num_channels)
+        
+    elif args.late_fusion_poses_fast:
+        model = VideoModelLateFusionFast(num_class=num_class, num_segments=args.num_segments,
+                       base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
+                       gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
+                       target_transform=target_transforms, num_channels=args.num_channels)
+        
     else:
         model = VideoModel(num_class=num_class, num_segments=args.num_segments,
                         base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
@@ -262,6 +265,31 @@ def main():
                         ),
             batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True, drop_last=False)
+        
+    elif args.late_fusion_poses_fast:
+        print("Uses Late-Fusion Poses Fast")
+        train_loader = torch.utils.data.DataLoader(
+            VideoDatasetPosesFast(args.root_path, args.train_list, num_segments=args.num_segments,
+                        image_tmpl=args.rgb_prefix+rgb_read_format,
+                        transform=train_transform),
+            batch_size=args.batch_size, shuffle=True,
+            num_workers=args.workers, pin_memory=True)
+
+        val_loader = torch.utils.data.DataLoader(
+            VideoDatasetPosesFast(args.root_path, args.val_list, num_segments=args.num_segments,
+                        image_tmpl=args.rgb_prefix+rgb_read_format,
+                        random_shift=False,
+                        transform=torchvision.transforms.Compose([
+                                GroupScale(int(scale_size)),
+                                GroupCenterCrop(crop_size),
+                                Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+                                ToTorchFormatTensor(),
+                                normalize,
+                                                                ]), 
+                        ),
+            batch_size=args.batch_size, shuffle=False,
+            num_workers=args.workers, pin_memory=True, drop_last=False)
+        
     else:
         train_loader = torch.utils.data.DataLoader(
             VideoDataset(args.root_path, args.train_list, num_segments=args.num_segments,
@@ -284,6 +312,7 @@ def main():
                         ),
             batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True, drop_last=False)
+
 
     # Class distribution
     num_pos = 276
@@ -365,7 +394,12 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
         data_time.update(time.time() - end)
         
         target = target.cuda().long()
-        input_var = input.cuda()
+        
+        # Verifica se `input` è una lista o un tensore singolo
+        if isinstance(input, list):
+            input_var = [x.cuda() for x in input]
+        else:
+            input_var = input.cuda()
         
         # compute output
         #################amp########################################
@@ -377,7 +411,13 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
         
         # measure accuracy and record loss
         prec1, prec2 = accuracy(output.data, target, topk=(1,2))
-        losses.update(loss_summ.data, input.size(0))
+        
+        # Ottieni la dimensione batch, indipendentemente dal formato di 'input'
+        batch_size = input[0].size(0) if isinstance(input, list) else input.size(0)
+
+        # Usa 'batch_size' per aggiornare le metriche
+        losses.update(loss_summ.data, batch_size)
+        #losses.update(loss_summ.data, input.size(0))
         top1.update(prec1, input.size(0))
         top5.update(prec2, input.size(0))
 
@@ -431,7 +471,12 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
         for i, (input, target) in enumerate(val_loader):
             
             target = target.cuda().long()
-            input_var = input.cuda()
+            
+            # Verifica se `input` è una lista o un tensore singolo
+            if isinstance(input, list):
+                input_var = [x.cuda() for x in input]
+            else:
+                input_var = input.cuda()
 
             # compute output
             with amp.autocast(enabled=args.with_amp):
@@ -440,8 +485,12 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
                 #print("DEBUGGING VALIDATION")
                 #print("output: {}, label: {}".format(output, target))
 
-            # measure accuracy and record loss
-            losses.update(loss.data, input.size(0))
+            # Ottieni la dimensione batch, indipendentemente dal formato di 'input'
+            batch_size = input[0].size(0) if isinstance(input, list) else input.size(0)
+
+            # Usa 'batch_size' per aggiornare le metriche
+            losses.update(loss.data, batch_size)
+            
             prec1, prec2 = accuracy(output.data, target, topk=(1,2))
             top1.update(prec1, input.size(0))
             top5.update(prec2, input.size(0))

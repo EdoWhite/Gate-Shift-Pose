@@ -5,6 +5,7 @@ import torchvision.transforms as transforms
 import time
 from torchvision.utils import save_image
 import os
+import numpy as np
 
 class PoseModel(nn.Module):
     def __init__(self, num_joints=17, feature_dim=128, save_dir="/data/users/edbianchi/saved_frames_poses"):
@@ -90,3 +91,32 @@ class PoseModel(nn.Module):
                 return keypoints_xy.reshape(-1).cuda()  # Converti in un vettore di forma (num_joints * 2)
         
         return None  # Ritorna None se non ci sono keypoints rilevati
+    
+    import os
+
+# POSES ON DISK
+class PoseModelFast(nn.Module):
+    def __init__(self, num_joints=17, feature_dim=128):
+        super(PoseModelFast, self).__init__()
+
+        # MLP per trasformare le coordinate in embedding di feature
+        self.fc1 = nn.Linear(num_joints * 2, 64).cuda()  # Ingresso: x e y per ciascun joint
+        self.fc2 = nn.Linear(64, feature_dim).cuda()
+        
+        self.feature_dim = feature_dim  # Dimensione del vettore di feature finale
+
+    def forward(self, pose_batch):
+        # `pose_batch` ha dimensione [batch_size, num_segments, num_joints*2]
+        batch_size, num_segments, _ = pose_batch.size()
+        
+        # Appiattisci i primi due assi per far passare i dati attraverso il layer lineare
+        pose_batch_flat = pose_batch.view(-1, 34).cuda()
+        
+        # Applica l'MLP ai keypoints per ottenere il vettore di embedding
+        x = torch.relu(self.fc1(pose_batch_flat))
+        x = self.fc2(x)
+        
+        # Ripristina la dimensione originale del batch
+        x = x.view(batch_size, num_segments, -1)
+        
+        return x
