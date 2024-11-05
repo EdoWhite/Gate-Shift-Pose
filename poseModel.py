@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from ultralytics import YOLO
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 import time
 from torchvision.utils import save_image
 import os
@@ -94,6 +95,67 @@ class PoseModel(nn.Module):
     
     import os
 
+#TO-DO: add a Graph Convolutional Netwrok-Based approach
+class GCNLayer(nn.Module):
+    def __init__(self, in_features, out_features, adj_matrix):
+        super(GCNLayer, self).__init__()
+        self.fc = nn.Linear(in_features, out_features)
+        self.adj = torch.tensor(adj_matrix, dtype=torch.float32, requires_grad=False).cuda()
+
+    def forward(self, x):
+        # x shape: [batch_size, num_joints, in_features]
+        x = torch.matmul(self.adj, x)
+        x = self.fc(x)
+        return F.relu(x)
+
+class PoseGCN(nn.Module):
+    def __init__(self, num_joints=17, in_features=2, hidden_dim=64, out_features=128):
+        super(PoseGCN, self).__init__()
+
+        # Adjacency matrix for YOLO pose estimation (COCO format)
+        adj_matrix = np.array([
+            # Nose, Eyes, Ears, Shoulders, Elbows, Wrists, Hips, Knees, Ankles
+            [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # Nose
+            [1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # Left Eye
+            [1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # Right Eye
+            [0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # Left Ear
+            [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # Right Ear
+            [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],  # Left Shoulder
+            [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0],  # Right Shoulder
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],  # Left Elbow
+            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],  # Right Elbow
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],  # Left Wrist
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],  # Right Wrist
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],  # Left Hip
+            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],  # Right Hip
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],  # Left Knee
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],  # Right Knee
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],  # Left Ankle
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],  # Right Ankle
+        ])
+
+        self.gcn1 = GCNLayer(in_features, hidden_dim, adj_matrix)
+        self.gcn2 = GCNLayer(hidden_dim, out_features, adj_matrix)
+        self.fc = nn.Linear(num_joints * out_features, 128)
+
+    def forward(self, pose_batch):
+        # pose_batch shape: [batch_size, num_segments, num_joints, in_features]
+        batch_size, num_segments, num_joints, _ = pose_batch.size()
+        
+        # Reshape to process joints individually
+        pose_batch = pose_batch.view(-1, num_joints, 2)  # [batch_size * num_segments, num_joints, in_features]
+
+        x = self.gcn1(pose_batch)
+        x = self.gcn2(x)
+
+        # Flatten the output for classification
+        x = x.view(batch_size * num_segments, -1)
+        x = self.fc(x)
+
+        # Reshape to original batch format
+        x = x.view(batch_size, num_segments, -1)
+        return x
+
 # POSES ON DISK
 class PoseModelFast(nn.Module):
     def __init__(self, num_joints=17, feature_dim=128):
@@ -101,7 +163,8 @@ class PoseModelFast(nn.Module):
 
         # MLP per trasformare le coordinate in embedding di feature
         self.fc1 = nn.Linear(num_joints * 2, 64).cuda()  # Ingresso: x e y per ciascun joint
-        self.fc2 = nn.Linear(64, feature_dim).cuda()
+        self.fc2 = nn.Linear(64, 128).cuda()
+        self.fc3 = nn.Linear(128, feature_dim).cuda()
         
         self.feature_dim = feature_dim  # Dimensione del vettore di feature finale
 
@@ -114,9 +177,38 @@ class PoseModelFast(nn.Module):
         
         # Applica l'MLP ai keypoints per ottenere il vettore di embedding
         x = torch.relu(self.fc1(pose_batch_flat))
-        x = self.fc2(x)
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
         
         # Ripristina la dimensione originale del batch
         x = x.view(batch_size, num_segments, -1)
         
+        return x
+    
+# CONVOLUTIUON-BASED
+class PoseModelConv1D(nn.Module):
+    def __init__(self, num_joints=17, feature_dim=128):
+        super(PoseModelConv1D, self).__init__()
+        
+        self.conv1 = nn.Conv1d(in_channels=2, out_channels=32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        self.fc = nn.Linear(64 * num_joints, feature_dim)
+        
+        self.feature_dim = feature_dim
+
+    def forward(self, pose_batch):
+        batch_size, num_segments, _ = pose_batch.size()
+        
+        # Riorganizza il tensor per convoluzione (batch * segments, 2, num_joints)
+        pose_batch = pose_batch.view(-1, 17, 2).permute(0, 2, 1).cuda()
+        
+        # Applica convoluzione 1D e attivazioni
+        x = F.relu(self.conv1(pose_batch))
+        x = F.relu(self.conv2(x))
+        
+        # Appiattisci e applica strato fully connected finale
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+
+        x = x.view(batch_size, num_segments, -1)
         return x

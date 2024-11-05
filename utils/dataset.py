@@ -1613,7 +1613,8 @@ class VideoDatasetPosesFast(data.Dataset):
             if len(images) != len(poses):
                 print(f"WARNING: Numero di immagini ({len(images)}) diverso dal numero di pose ({len(poses)}) per il record {record.path}")
             else:
-                print(f"DEBUG: Numero di immagini e pose corrispondente per il record {record.path}: {len(images)} elementi")
+                #print(f"DEBUG: Numero di immagini e pose corrispondente per il record {record.path}: {len(images)} elementi")
+                pass
 
             if self.multilabel:
                 # print('multilabel')

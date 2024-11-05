@@ -12,9 +12,11 @@ parser.add_argument('--store_name', type=str, default="")
 # ========================= Model Configs ==========================
 parser.add_argument('--early_fusion_poses', default=False, action="store_true")
 parser.add_argument('--num_channels', type=int, default=3)
+parser.add_argument('--rand_augment_4ch', default=False, action="store_true")
 parser.add_argument('--rand_augment', default=False, action="store_true")
 parser.add_argument('--late_fusion_poses', default=False, action="store_true")
 parser.add_argument('--late_fusion_poses_fast', default=False, action="store_true")
+parser.add_argument('--late_fusion_poses_attention', default=False, action="store_true")
 
 parser.add_argument('--finetune', default=False, action="store_true")
 parser.add_argument('--feature_extractor', default=False, action="store_true")

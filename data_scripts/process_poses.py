@@ -5,7 +5,7 @@ from ultralytics import YOLO
 import time
 
 # Imposta il percorso del dataset
-base_path = "/data/users/edbianchi/FRFS_BAK/dataset/FRFS/frames"
+base_path = "/data/users/edbianchi/DIVING/dataset/Diving48/frames"
 
 # Inizializza YOLO per l'estrazione delle pose
 pose_detector = YOLO('/data/users/edbianchi/POSE/yolo11x-pose.pt').cuda()

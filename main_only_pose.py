@@ -10,7 +10,7 @@ import torch.optim
 import torchvision.transforms as transforms
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.tensorboard import SummaryWriter
-from models import VideoModel, VideoModelLateFusion, VideoModelLateFusionFast, VideoModelLateFusionAttention
+from models import VideoModelPoses
 from utils.transforms import *
 from utils.opts import parser
 import utils.CosineAnnealingLR as CosineAnnealingLR
@@ -121,29 +121,10 @@ def main():
     print('storing name: ' + args.store_name)
 
     # Load the base model
-    if args.late_fusion_poses:
-        model = VideoModelLateFusion(num_class=num_class, num_segments=args.num_segments,
-                       base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
-                       gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
-                       target_transform=target_transforms, num_channels=args.num_channels)
-        
-    elif args.late_fusion_poses_fast:
-        model = VideoModelLateFusionFast(num_class=num_class, num_segments=args.num_segments,
-                       base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
-                       gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
-                       target_transform=target_transforms, num_channels=args.num_channels)
-        
-    elif args.late_fusion_poses_attention:
-        model = VideoModelLateFusionAttention(num_class=num_class, num_segments=args.num_segments,
-                base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
-                gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
-                target_transform=target_transforms, num_channels=args.num_channels)
-        
-    else:
-        model = VideoModel(num_class=num_class, num_segments=args.num_segments,
-                        base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
-                        gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
-                        target_transform=target_transforms, num_channels=args.num_channels)
+    model = VideoModelPoses(num_class=num_class, num_segments=args.num_segments,
+                    base_model=args.arch, consensus_type=args.consensus_type, dropout=args.dropout,
+                    gsf=args.gsf, gsf_ch_ratio=args.gsf_ch_ratio,
+                    target_transform=target_transforms, num_channels=args.num_channels)
     
     # FEATURE EXTRACTOR MODE
     if (args.finetune == True) or (args.feature_extractor == True):
@@ -226,7 +207,7 @@ def main():
         else:
             print(("=> no checkpoint found at '{}'".format(args.resume)))
 
-    if args.rand_augment_4ch:
+    if args.rand_augment:
         print("Using Random Augmentation (only tranformations compatible with 4 channels)")
         train_transform = Transform4ChannelWrapper(torchvision.transforms.Compose([
                             GroupScaleHW(h=360, w=640),
@@ -238,18 +219,6 @@ def main():
                             ToTorchFormatTensor(),
                             normalize,
                                                         ]))
-    elif args.rand_augment:
-        print("Using Random Augmentation")
-        train_transform = torchvision.transforms.Compose([
-                    GroupScaleHW(h=360, w=640),
-                    rand_augment_transform(config_str='rand-m9-mstd0.5', 
-                                            hparams={'translate_const': 117, 'img_mean': (124, 116, 104)}
-                                        ),
-                    train_augmentation,
-                    Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-                    ToTorchFormatTensor(),
-                    normalize,
-                                                ])
     else:
         # No random augmentation
         train_transform = torchvision.transforms.Compose([
@@ -260,77 +229,30 @@ def main():
             normalize,
         ])
     
-    if args.early_fusion_poses:
-        print("Uses Early-Fusion Poses")
-        train_loader = torch.utils.data.DataLoader(
-            VideoDatasetPoses(args.root_path, args.train_list, num_segments=args.num_segments,
-                        image_tmpl=args.rgb_prefix+rgb_read_format,
-                        transform=train_transform),
-            batch_size=args.batch_size, shuffle=True,
-            num_workers=args.workers, pin_memory=True)
         
-        val_loader = torch.utils.data.DataLoader(
-            VideoDatasetPoses(args.root_path, args.val_list, num_segments=args.num_segments,
-                        image_tmpl=args.rgb_prefix+rgb_read_format,
-                        random_shift=False,
-                        transform=torchvision.transforms.Compose([
-                                GroupScale(int(scale_size)),
-                                GroupCenterCrop(crop_size),
-                                Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-                                ToTorchFormatTensor(),
-                                normalize,
-                                                                ]), 
-                        ),
-            batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers, pin_memory=True, drop_last=False)
+    print("Uses Late-Fusion Poses Fast")
+    train_loader = torch.utils.data.DataLoader(
+        VideoDatasetPosesFast(args.root_path, args.train_list, num_segments=args.num_segments,
+                    image_tmpl=args.rgb_prefix+rgb_read_format,
+                    transform=train_transform),
+        batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers, pin_memory=True)
+
+    val_loader = torch.utils.data.DataLoader(
+        VideoDatasetPosesFast(args.root_path, args.val_list, num_segments=args.num_segments,
+                    image_tmpl=args.rgb_prefix+rgb_read_format,
+                    random_shift=False,
+                    transform=torchvision.transforms.Compose([
+                            GroupScale(int(scale_size)),
+                            GroupCenterCrop(crop_size),
+                            Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
+                            ToTorchFormatTensor(),
+                            normalize,
+                                                            ]), 
+                    ),
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True, drop_last=False)
         
-    elif args.late_fusion_poses_fast or args.late_fusion_poses_attention:
-        print("Uses Late-Fusion Poses Fast or Late-Fusion Poses Attention")
-        train_loader = torch.utils.data.DataLoader(
-            VideoDatasetPosesFast(args.root_path, args.train_list, num_segments=args.num_segments,
-                        image_tmpl=args.rgb_prefix+rgb_read_format,
-                        transform=train_transform),
-            batch_size=args.batch_size, shuffle=True,
-            num_workers=args.workers, pin_memory=True)
-
-        val_loader = torch.utils.data.DataLoader(
-            VideoDatasetPosesFast(args.root_path, args.val_list, num_segments=args.num_segments,
-                        image_tmpl=args.rgb_prefix+rgb_read_format,
-                        random_shift=False,
-                        transform=torchvision.transforms.Compose([
-                                GroupScale(int(scale_size)),
-                                GroupCenterCrop(crop_size),
-                                Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-                                ToTorchFormatTensor(),
-                                normalize,
-                                                                ]), 
-                        ),
-            batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers, pin_memory=True, drop_last=False)
-        
-    else:
-        train_loader = torch.utils.data.DataLoader(
-            VideoDataset(args.root_path, args.train_list, num_segments=args.num_segments,
-                        image_tmpl=args.rgb_prefix+rgb_read_format,
-                        transform=train_transform),
-            batch_size=args.batch_size, shuffle=True,
-            num_workers=args.workers, pin_memory=True)
-
-        val_loader = torch.utils.data.DataLoader(
-            VideoDataset(args.root_path, args.val_list, num_segments=args.num_segments,
-                        image_tmpl=args.rgb_prefix+rgb_read_format,
-                        random_shift=False,
-                        transform=torchvision.transforms.Compose([
-                                GroupScale(int(scale_size)),
-                                GroupCenterCrop(crop_size),
-                                Stack(roll=(args.arch in ['bninception', 'inceptionv3'])),
-                                ToTorchFormatTensor(),
-                                normalize,
-                                                                ]), 
-                        ),
-            batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers, pin_memory=True, drop_last=False)
-
 
     # Class distribution
     num_pos = 276
