@@ -683,7 +683,8 @@ class VideoDataset(data.Dataset):
     def __len__(self):
         return len(self.video_list)
 
-# Load the images and compute the poses
+# Original: poses computed during execution
+# Current: Poses loaded from disk
 class VideoDatasetPoses(data.Dataset):
     def __init__(self, root_path, list_file,
                  num_segments=3,
@@ -708,7 +709,7 @@ class VideoDatasetPoses(data.Dataset):
         self.dense_sample = dense_sample
         self.mode = mode
         self.random_shuffling = random_shuffling
-        self.pose_model = YOLO('/data/users/edbianchi/POSE/yolo11l-pose.pt')
+        self.pose_model = None #YOLO('/data/users/edbianchi/POSE/yolo11l-pose.pt')
 
         self._parse_list()
 
@@ -747,6 +748,16 @@ class VideoDatasetPoses(data.Dataset):
             print('error loading image:', os.path.join(self.root_path, directory, self.image_tmpl.format(idx)))
             return [Image.open(os.path.join(self.root_path, directory, self.image_tmpl.format(1))).convert('RGB')]
 
+    def _load_pose(self, directory, idx):
+        """Carica una posa (keypoints) salvata come file .npy da un percorso specifico."""
+        pose_path = os.path.join(self.root_path, directory, f"{idx:05d}.npy")
+        try:
+            pose_data = np.load(pose_path)
+            return torch.from_numpy(pose_data).float()  # Converte in tensore PyTorch
+        except Exception:
+            print(f'Error loading pose: {pose_path}')
+            # Se il file non esiste o non è caricabile, restituisci un tensore di zeri come fallback
+            return torch.zeros(34)  # Assumendo 17 joint * 2 (x, y) = 34 elementi
 
     def generate_pose_heatmap(self, keypoints, img_size=(360, 640), sigma=10):
         """
@@ -800,9 +811,7 @@ class VideoDatasetPoses(data.Dataset):
         if heatmap.shape[:2] != img_np.shape[:2]:
             heatmap = cv2.resize(heatmap, (img_np.shape[1], img_np.shape[0]))
 
-        print("try to execute line 813 Dataset.py")
         combined = np.concatenate((img_np, heatmap), axis=-1)  # Append heatmap as an additional channel
-        print("executed line 813 Dataset.py") 
 
         # Ensure that the combined array is in a valid format for PIL
         combined_img = Image.fromarray(combined.astype(np.uint8), mode='RGBA')  # Convert back to PIL image, assuming 4 channels
@@ -1107,8 +1116,8 @@ class VideoDatasetPoses(data.Dataset):
         item = self.get(record, segment_indices)
         return item
 
-
-    def get(self, record, indices):
+    # compute pose on the fly
+    def get_old(self, record, indices):
         # num_clips = 1 by default, in training = 1, in test can be modified (on the repo is = 1)
         if self.num_clips > 1:
             process_data_final = []
@@ -1195,11 +1204,86 @@ class VideoDatasetPoses(data.Dataset):
                 
             return process_data, label
 
+    # load pose on the fly
+    def get(self, record, indices):
+        # num_clips = 1 by default, in training = 1, in test can be modified (on the repo is = 1)
+        if self.num_clips > 1:
+            process_data_final = []
+            for k in range(self.num_clips):
+                images = list()
+                for seg_ind in indices[k]:
+                    p = int(seg_ind)
+                    if self.multilabel:
+                        p = p + record.start_frame
+                    seg_imgs = self._load_image(record.path, p)
+                    images.extend(seg_imgs)
+                    if p < record.num_frames:
+                        p += 1
+
+                process_data, label = self.transform((images, record.label))
+                process_data_final.append(process_data)
+            process_data_final = torch.stack(process_data_final, 0)
+
+            if self.multilabel:
+                label = {'action_label': record.label,
+                         'verb_label': record.label_verb,
+                         'noun_label': record.label_noun}
+                
+            return process_data_final, label
+
+        else:
+            images = list()
+            pose_heatmaps = list()
+            
+            if self.multilabel:
+                indices = indices + record.start_frame
+            
+            for seg_ind in indices:
+                p = int(seg_ind)
+                # seg_imgs contains more than one image
+                seg_imgs = self._load_image(record.path, p)
+                images.extend(seg_imgs)
+                
+                pose_data = self._load_pose(record.path, p)
+                heatmap = self.generate_pose_heatmap(pose_data) # Get only the poses of the first person detected
+                pose_heatmaps.append(heatmap)
+
+                if p < record.num_frames:
+                    p += 1
+
+            # Ensure combined_images is valid
+            if len(images) == len(pose_heatmaps):
+                combined_images = [self.append_heatmap_to_image(img, heatmap) for img, heatmap in zip(images, pose_heatmaps)]
+            else:
+                print(f"Mismatch in images and heatmaps length: {len(images)} vs {len(pose_heatmaps)}")
+                return None  # Handle the error more gracefully here
+
+            # Ensure combined_images is valid before applying the transform
+            if combined_images is None or len(combined_images) == 0:
+                print("No valid combined images")
+                return None
+
+            print(f"Applying transform on combined images of length {len(combined_images)}")
+            
+            # Apply transformations to combined images
+            process_data, label = self.transform((combined_images, record.label))
+
+            if process_data is None:
+                raise ValueError("The transformed data is None")
+
+            if self.multilabel:
+                # print('multilabel')
+                label = {'action_label': record.label,
+                         'verb_label': record.label_verb,
+                         'noun_label': record.label_noun}
+                
+            return process_data, label
+
     def __len__(self):
         return len(self.video_list)
 
 
-# LOAD IMAGES AND POSES FROM DISK
+# FOR LATE_FUSION: load images and poses from disk
 class VideoDatasetPosesFast(data.Dataset):
     def __init__(self, root_path, list_file,
                  num_segments=3,

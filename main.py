@@ -331,7 +331,7 @@ def main():
             batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True, drop_last=False)
 
-
+    """
     # Class distribution
     num_pos = 276
     num_neg = 141
@@ -347,11 +347,12 @@ def main():
 
     # Tensor of weights for [class 0, class 1]
     class_weights = torch.tensor([weight_neg, weight_pos]).cuda()
-
+    """
     # define loss function (criterion) and optimizer
     if args.loss_type == 'nll':
         print('Standard CE loss')
-        criterion = torch.nn.CrossEntropyLoss(weight=class_weights).cuda()
+        #criterion = torch.nn.CrossEntropyLoss(weight=class_weights).cuda()
+        criterion = torch.nn.CrossEntropyLoss().cuda()
     else:
         raise ValueError("Unknown loss type")
 
@@ -428,7 +429,7 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
             scaler.scale(loss).backward()
         
         # measure accuracy and record loss
-        prec1, prec2 = accuracy(output.data, target, topk=(1,2))
+        prec1, prec2 = accuracy(output.data, target, topk=(1,5))
         
         # Ottieni la dimensione batch, indipendentemente dal formato di 'input'
         batch_size = input[0].size(0) if isinstance(input, list) else input.size(0)
@@ -511,7 +512,7 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
             # Usa 'batch_size' per aggiornare le metriche
             losses.update(loss.data, batch_size)
             
-            prec1, prec2 = accuracy(output.data, target, topk=(1,2))
+            prec1, prec2 = accuracy(output.data, target, topk=(1,5))
             top1.update(prec1, batch_size)
             top5.update(prec2, batch_size)
 
