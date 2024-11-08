@@ -955,7 +955,8 @@ class VideoModelLateFusionAttention(nn.Module):
                                                GroupRandomHorizontalFlip(is_flow=False,
                                                                          target_transform=self.target_transform)])
         
-        
+
+ # POSE ONLY       
 class VideoModelPoses(nn.Module):
     def __init__(self, num_class, num_segments, base_model='BNInception',
                  consensus_type='avg', before_softmax=True,

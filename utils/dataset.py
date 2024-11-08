@@ -692,7 +692,7 @@ class VideoDatasetPoses(data.Dataset):
                  random_shift=True, test_mode=False, num_clips=1,
                  load_from_video=False, frame_interval=5,
                  sparse_sampling=True, multilabel=False, dense_sample=False, mode="train", 
-                 random_shuffling=False,):
+                 random_shuffling=False, pose_prefix=''):
 
         self.root_path = root_path
         self.list_file = list_file
@@ -710,6 +710,7 @@ class VideoDatasetPoses(data.Dataset):
         self.mode = mode
         self.random_shuffling = random_shuffling
         self.pose_model = None #YOLO('/data/users/edbianchi/POSE/yolo11l-pose.pt')
+        self.pose_prefix = pose_prefix
 
         self._parse_list()
 
@@ -750,7 +751,7 @@ class VideoDatasetPoses(data.Dataset):
 
     def _load_pose(self, directory, idx):
         """Carica una posa (keypoints) salvata come file .npy da un percorso specifico."""
-        pose_path = os.path.join(self.root_path, directory, f"{idx:05d}.npy")
+        pose_path = os.path.join(self.root_path, directory, f"{self.pose_prefix}{idx:05d}.npy")
         try:
             pose_data = np.load(pose_path)
             return torch.from_numpy(pose_data).float()  # Converte in tensore PyTorch
@@ -759,15 +760,17 @@ class VideoDatasetPoses(data.Dataset):
             # Se il file non esiste o non è caricabile, restituisci un tensore di zeri come fallback
             return torch.zeros(34)  # Assumendo 17 joint * 2 (x, y) = 34 elementi
 
-    def generate_pose_heatmap(self, keypoints, img_size=(360, 640), sigma=10):
+    def generate_pose_heatmap(keypoints, img_size=(360, 640), sigma=10):
         """
         Generates a single heatmap from a set of keypoints using a Gaussian distribution.
-        :param keypoints: Array of keypoints (x, y) coordinates
+        :param keypoints: Array of keypoints (x, y) coordinates, shape (17, 2)
         :param img_size: Size of the image (height, width)
         :param sigma: Standard deviation of the Gaussian distribution
         :return: 2D heatmap of shape (img_size[0], img_size[1])
         """
         heatmap = np.zeros(img_size, dtype=np.float32)
+        
+        keypoints = keypoints.squeeze(0)
 
         # Define the size of the Gaussian kernel
         size = int(6 * sigma + 1)
@@ -777,8 +780,8 @@ class VideoDatasetPoses(data.Dataset):
         gaussian_kernel = np.exp(-((x_grid - size // 2) ** 2 + (y_grid - size // 2) ** 2) / (2 * sigma ** 2))
 
         # Iterate over keypoints (ignoring zero-valued keypoints)
-        for i in range(keypoints.shape[1]):  # keypoints.shape[1] is 17 (number of keypoints)
-            x, y = int(keypoints[0, i, 0].item()), int(keypoints[0, i, 1].item())  # Access the x, y of each keypoint
+        for i in range(keypoints.shape[0]):
+            x, y = int(keypoints[i, 0]), int(keypoints[i, 1])  # Access x, y coordinates
 
             # Ensure valid keypoints (non-zero)
             if x > 0 and y > 0:
@@ -797,6 +800,9 @@ class VideoDatasetPoses(data.Dataset):
                 # Add the Gaussian to the heatmap
                 heatmap[ul_y:br_y, ul_x:br_x] += gaussian_kernel[g_y_ul:g_y_br, g_x_ul:g_x_br]
 
+        # Clip the heatmap to the range [0, 1] to avoid extreme values from overlaps
+        heatmap = np.clip(heatmap, 0, 1)
+
         return heatmap
 
     def generate_blank_heatmap(self, img_size=(360, 640)):
@@ -804,19 +810,29 @@ class VideoDatasetPoses(data.Dataset):
         return np.zeros(img_size, dtype=np.float32)
 
     def append_heatmap_to_image(self, img, heatmap):
-        img_np = np.array(img)  # Convert PIL image to NumPy array
-        heatmap = np.expand_dims(heatmap, axis=-1)  # Add channel dimension to heatmap
+        """
+        Appends the heatmap as an additional channel to the image and converts it to a PIL RGBA format.
+        :param img: PIL image
+        :param heatmap: 2D heatmap array
+        :return: PIL Image with RGBA format
+        """
+        img_np = np.array(img)  # Convert PIL image to NumPy array (H, W, 3)
 
-        # Make sure that the heatmap has the same spatial dimensions as the image
+        # Ensure heatmap has the same spatial dimensions as the image
         if heatmap.shape[:2] != img_np.shape[:2]:
             heatmap = cv2.resize(heatmap, (img_np.shape[1], img_np.shape[0]))
 
-        combined = np.concatenate((img_np, heatmap), axis=-1)  # Append heatmap as an additional channel
+        # Normalize heatmap to range [0, 255]
+        heatmap = (heatmap * 255).astype(np.uint8)
 
-        # Ensure that the combined array is in a valid format for PIL
-        combined_img = Image.fromarray(combined.astype(np.uint8), mode='RGBA')  # Convert back to PIL image, assuming 4 channels
+        # Add the heatmap as an additional channel
+        heatmap_expanded = np.expand_dims(heatmap, axis=-1)  # Shape (H, W, 1)
+        combined = np.concatenate((img_np, heatmap_expanded), axis=-1)  # Shape (H, W, 4)
 
-        return combined_img
+        # Convert combined array to a PIL image with RGBA mode
+        combined_img_pil = Image.fromarray(combined.astype(np.uint8), mode='RGBA')
+
+        return combined_img_pil
 
     def _parse_list(self):
         #self.list_file is the dataset file
@@ -1291,7 +1307,7 @@ class VideoDatasetPosesFast(data.Dataset):
                  random_shift=True, test_mode=False, num_clips=1,
                  load_from_video=False, frame_interval=5,
                  sparse_sampling=True, multilabel=False, dense_sample=False, mode="train", 
-                 random_shuffling=False,):
+                 random_shuffling=False, pose_prefix=''):
 
         self.root_path = root_path
         self.list_file = list_file
@@ -1308,6 +1324,7 @@ class VideoDatasetPosesFast(data.Dataset):
         self.dense_sample = dense_sample
         self.mode = mode
         self.random_shuffling = random_shuffling
+        self.pose_prefix = pose_prefix
 
         self._parse_list()
     
@@ -1320,7 +1337,7 @@ class VideoDatasetPosesFast(data.Dataset):
         
     def _load_pose(self, directory, idx):
         """Carica una posa (keypoints) salvata come file .npy da un percorso specifico."""
-        pose_path = os.path.join(self.root_path, directory, f"{idx:05d}.npy")
+        pose_path = os.path.join(self.root_path, directory, f"{self.pose_prefix}{idx:05d}.npy")
         try:
             pose_data = np.load(pose_path)
             return torch.from_numpy(pose_data).float()  # Converte in tensore PyTorch

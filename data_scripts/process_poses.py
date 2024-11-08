@@ -30,10 +30,15 @@ for root, dirs, files in os.walk(base_path):
         if file_name.endswith('.jpg'):  # Considera solo i frame in formato .jpg
             image_path = os.path.join(root, file_name)
             pose_save_path = os.path.splitext(image_path)[0] + '.npy'  # Cambia l'estensione in .npy
+            
+            # Salta se il file di posa esiste già
+            if os.path.exists(pose_save_path):
+                continue
+            
             extract_and_save_pose(image_path, pose_save_path)
 
 end_time = time.time()
 total_time = end_time - start_time
 
-print(f"Pose Extraction Completed.")
+print("Pose Extraction Completed.")
 print(f"Total execution time: {total_time:.2f} seconds.")

@@ -51,6 +51,7 @@ def main():
     elif args.dataset == 'diving48':
         num_class = 48
         args.rgb_prefix = 'frames'
+        args.pose_prefix = 'frames'
         rgb_read_format = "{:05d}.jpg"
 
     elif args.dataset == 'kinetics400':
@@ -68,6 +69,7 @@ def main():
     elif args.dataset == 'FRFS':
         num_class = 2
         args.rgb_prefix = ''
+        args.pose_prefix = ''
         rgb_read_format = "{:05d}.jpg"
     
     # skate dataset
@@ -265,14 +267,14 @@ def main():
         train_loader = torch.utils.data.DataLoader(
             VideoDatasetPoses(args.root_path, args.train_list, num_segments=args.num_segments,
                         image_tmpl=args.rgb_prefix+rgb_read_format,
-                        transform=train_transform),
+                        transform=train_transform, pose_prefix=args.pose_prefix),
             batch_size=args.batch_size, shuffle=True,
             num_workers=args.workers, pin_memory=True)
         
         val_loader = torch.utils.data.DataLoader(
             VideoDatasetPoses(args.root_path, args.val_list, num_segments=args.num_segments,
                         image_tmpl=args.rgb_prefix+rgb_read_format,
-                        random_shift=False,
+                        random_shift=False, pose_prefix=args.pose_prefix,
                         transform=torchvision.transforms.Compose([
                                 GroupScale(int(scale_size)),
                                 GroupCenterCrop(crop_size),
@@ -289,14 +291,14 @@ def main():
         train_loader = torch.utils.data.DataLoader(
             VideoDatasetPosesFast(args.root_path, args.train_list, num_segments=args.num_segments,
                         image_tmpl=args.rgb_prefix+rgb_read_format,
-                        transform=train_transform),
+                        transform=train_transform, pose_prefix=args.pose_prefix),
             batch_size=args.batch_size, shuffle=True,
             num_workers=args.workers, pin_memory=True)
 
         val_loader = torch.utils.data.DataLoader(
             VideoDatasetPosesFast(args.root_path, args.val_list, num_segments=args.num_segments,
                         image_tmpl=args.rgb_prefix+rgb_read_format,
-                        random_shift=False,
+                        random_shift=False, pose_prefix=args.pose_prefix,
                         transform=torchvision.transforms.Compose([
                                 GroupScale(int(scale_size)),
                                 GroupCenterCrop(crop_size),

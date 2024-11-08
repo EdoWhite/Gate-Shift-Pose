@@ -29,7 +29,7 @@ def return_diving48():
     filename_imglist_train = 'Diving48/train_videofolder.txt'
     filename_imglist_val = 'Diving48/val_videofolder.txt'
     filename_imglist_test = 'Diving48/val_videofolder.txt'
-    prefix = 'frames{:06d}.jpg'
+    prefix = 'frames{:05d}.jpg' #this was 6, maybe it's 5 
 
     return filename_imglist_train, filename_imglist_val, filename_imglist_test, root_data, prefix
     
