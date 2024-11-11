@@ -760,7 +760,7 @@ class VideoDatasetPoses(data.Dataset):
             # Se il file non esiste o non è caricabile, restituisci un tensore di zeri come fallback
             return torch.zeros(34)  # Assumendo 17 joint * 2 (x, y) = 34 elementi
 
-    def generate_pose_heatmap(keypoints, img_size=(360, 640), sigma=10):
+    def generate_pose_heatmap(self, keypoints, img_size=(360, 640), sigma=10):
         """
         Generates a single heatmap from a set of keypoints using a Gaussian distribution.
         :param keypoints: Array of keypoints (x, y) coordinates, shape (17, 2)
@@ -769,38 +769,42 @@ class VideoDatasetPoses(data.Dataset):
         :return: 2D heatmap of shape (img_size[0], img_size[1])
         """
         heatmap = np.zeros(img_size, dtype=np.float32)
-        
+
+        # Remove the batch dimension if present
         keypoints = keypoints.squeeze(0)
 
-        # Define the size of the Gaussian kernel
+        # Define the Gaussian kernel size and create the kernel
         size = int(6 * sigma + 1)
         x_range = np.arange(0, size, 1, float)
         y_range = np.arange(0, size, 1, float)
         x_grid, y_grid = np.meshgrid(x_range, y_range)
         gaussian_kernel = np.exp(-((x_grid - size // 2) ** 2 + (y_grid - size // 2) ** 2) / (2 * sigma ** 2))
 
-        # Iterate over keypoints (ignoring zero-valued keypoints)
+        # Iterate over keypoints (ignoring zero-valued or out-of-bounds keypoints)
         for i in range(keypoints.shape[0]):
-            x, y = int(keypoints[i, 0]), int(keypoints[i, 1])  # Access x, y coordinates
+            x, y = int(keypoints[i, 0]), int(keypoints[i, 1])
 
-            # Ensure valid keypoints (non-zero)
-            if x > 0 and y > 0:
-                # Define the bounding box for the Gaussian to be placed
-                ul_x = max(0, x - size // 2)
-                ul_y = max(0, y - size // 2)
-                br_x = min(img_size[1], x + size // 2 + 1)
-                br_y = min(img_size[0], y + size // 2 + 1)
+            # Skip invalid or out-of-bounds keypoints
+            if not (0 < x < img_size[1] and 0 < y < img_size[0]):
+                continue
 
-                # Compute the region of the heatmap that the Gaussian will affect
-                g_x_ul = max(0, size // 2 - x)
-                g_y_ul = max(0, size // 2 - y)
-                g_x_br = min(size, img_size[1] - ul_x)
-                g_y_br = min(size, img_size[0] - ul_y)
+            # Calculate the bounding box for Gaussian placement
+            ul_x = max(0, x - size // 2)
+            ul_y = max(0, y - size // 2)
+            br_x = min(img_size[1], x + size // 2 + 1)
+            br_y = min(img_size[0], y + size // 2 + 1)
 
-                # Add the Gaussian to the heatmap
+            # Calculate Gaussian kernel region that fits within the bounding box
+            g_x_ul = max(0, size // 2 - x)
+            g_y_ul = max(0, size // 2 - y)
+            g_x_br = min(size, img_size[1] - ul_x)
+            g_y_br = min(size, img_size[0] - ul_y)
+
+            # Only add to heatmap if the bounding box is valid
+            if (br_x > ul_x) and (br_y > ul_y) and (g_x_br > g_x_ul) and (g_y_br > g_y_ul):
                 heatmap[ul_y:br_y, ul_x:br_x] += gaussian_kernel[g_y_ul:g_y_br, g_x_ul:g_x_br]
 
-        # Clip the heatmap to the range [0, 1] to avoid extreme values from overlaps
+        # Clip the final heatmap to the range [0, 1]
         heatmap = np.clip(heatmap, 0, 1)
 
         return heatmap
@@ -1261,6 +1265,8 @@ class VideoDatasetPoses(data.Dataset):
                 images.extend(seg_imgs)
                 
                 pose_data = self._load_pose(record.path, p)
+                print(pose_data.shape)
+                print(pose_data)
                 heatmap = self.generate_pose_heatmap(pose_data) # Get only the poses of the first person detected
                 pose_heatmaps.append(heatmap)
 

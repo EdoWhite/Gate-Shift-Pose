@@ -53,6 +53,7 @@ def main():
         args.rgb_prefix = 'frames'
         args.pose_prefix = 'frames'
         rgb_read_format = "{:05d}.jpg"
+        args.prec25 = 5
 
     elif args.dataset == 'kinetics400':
         num_class = 400
@@ -71,6 +72,7 @@ def main():
         args.rgb_prefix = ''
         args.pose_prefix = ''
         rgb_read_format = "{:05d}.jpg"
+        args.prec25 = 2
     
     # skate dataset
     elif args.dataset == 'skate':
@@ -333,23 +335,24 @@ def main():
             batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    """
-    # Class distribution
-    num_pos = 276
-    num_neg = 141
+    if args.dataset == 'FRFS':
+        # Class distribution
+        num_pos = 276
+        num_neg = 141
 
-    # Calculate class weights inversely proportional to the frequency
-    weight_pos = 1.0 / num_pos
-    weight_neg = 1.0 / num_neg
+        # Calculate class weights inversely proportional to the frequency
+        weight_pos = 1.0 / num_pos
+        weight_neg = 1.0 / num_neg
 
-    # Normalize weights to sum to 1 (optional, but common practice)
-    weight_sum = weight_pos + weight_neg
-    weight_pos /= weight_sum
-    weight_neg /= weight_sum
+        # Normalize weights to sum to 1 (optional, but common practice)
+        weight_sum = weight_pos + weight_neg
+        weight_pos /= weight_sum
+        weight_neg /= weight_sum
 
-    # Tensor of weights for [class 0, class 1]
-    class_weights = torch.tensor([weight_neg, weight_pos]).cuda()
-    """
+        # Tensor of weights for [class 0, class 1]
+        class_weights = torch.tensor([weight_neg, weight_pos]).cuda()
+
+    
     # define loss function (criterion) and optimizer
     if args.loss_type == 'nll':
         print('Standard CE loss')
@@ -431,7 +434,7 @@ def train(train_loader, model, criterion, optimizer, epoch, log, writer, scaler)
             scaler.scale(loss).backward()
         
         # measure accuracy and record loss
-        prec1, prec2 = accuracy(output.data, target, topk=(1,5))
+        prec1, prec2 = accuracy(output.data, target, topk=(1,args.prec25))
         
         # Ottieni la dimensione batch, indipendentemente dal formato di 'input'
         batch_size = input[0].size(0) if isinstance(input, list) else input.size(0)
@@ -514,7 +517,7 @@ def validate(val_loader, model, criterion, iter, log, epoch, writer):
             # Usa 'batch_size' per aggiornare le metriche
             losses.update(loss.data, batch_size)
             
-            prec1, prec2 = accuracy(output.data, target, topk=(1,5))
+            prec1, prec2 = accuracy(output.data, target, topk=(1,args.prec25))
             top1.update(prec1, batch_size)
             top5.update(prec2, batch_size)
 
