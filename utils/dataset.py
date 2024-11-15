@@ -1231,17 +1231,30 @@ class VideoDatasetPoses(data.Dataset):
             process_data_final = []
             for k in range(self.num_clips):
                 images = list()
+                pose_heatmaps = list()
                 for seg_ind in indices[k]:
                     p = int(seg_ind)
                     if self.multilabel:
                         p = p + record.start_frame
                     seg_imgs = self._load_image(record.path, p)
                     images.extend(seg_imgs)
+                    
+                    pose_data = self._load_pose(record.path, p)
+                    heatmap = self.generate_pose_heatmap(pose_data) # Get only the poses of the first person detected
+                    pose_heatmaps.append(heatmap)
+                
                     if p < record.num_frames:
                         p += 1
+                    
+                if len(images) == len(pose_heatmaps):
+                    combined_images = [self.append_heatmap_to_image(img, heatmap) for img, heatmap in zip(images, pose_heatmaps)]
+                else:
+                    print(f"Mismatch in images and heatmaps length: {len(images)} vs {len(pose_heatmaps)}")
+                    return None 
 
-                process_data, label = self.transform((images, record.label))
+                process_data, label = self.transform((combined_images, record.label))
                 process_data_final.append(process_data)
+                
             process_data_final = torch.stack(process_data_final, 0)
 
             if self.multilabel:
@@ -1265,8 +1278,6 @@ class VideoDatasetPoses(data.Dataset):
                 images.extend(seg_imgs)
                 
                 pose_data = self._load_pose(record.path, p)
-                print(pose_data.shape)
-                print(pose_data)
                 heatmap = self.generate_pose_heatmap(pose_data) # Get only the poses of the first person detected
                 pose_heatmaps.append(heatmap)
 
