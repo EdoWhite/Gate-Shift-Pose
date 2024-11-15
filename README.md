@@ -2,19 +2,10 @@
 
 
 
-# GSF-Pose: A pose-augmented Gate-Shift-Fuse for Video Action Recognition
+# Gate-Shift-Pose: A Pose-Enhanced Architecture for Sport Action Recognition
 
 
-We release the code and trained models of our paper [Gate-Shift-Fuse for Video Action Recognition](https://arxiv.org/pdf/2203.08897.pdf). If you find our work useful for your research, please cite
-```
-@article{gsf,
-  title={{Gate-Shift-Fuse for Video Action Recognition}},
-  author={Sudhakaran, Swathikiran and Escalera, Sergio and Lanz, Oswald},
-  journal={{IEEE Transactions on Pattern Analysis and Machine Intelligence}},
-  year={2023}
-  doi={10.1109/TPAMI.2023.3268134}
-}
-```
+Coming soon.....
 
 ### Prerequisites
 - Python 3.5
@@ -76,5 +67,4 @@ All pretrained weights can be downloaded from [here](https://drive.google.com/dr
 
 
 ### Acknowledgements
-
-This implementation is built upon the [TRN-pytorch](https://github.com/metalbubble/TRN-pytorch) codebase which is based on [TSN-pytorch](https://github.com/yjxiong/tsn-pytorch). We thank Yuanjun Xiong and Bolei Zhou for releasing TSN-pytorch and TRN-pytorch repos.
+Based on GSF: [Gate-Shift-Fuse for Video Action Recognition](https://arxiv.org/pdf/2203.08897.pdf), which is built upon the [TRN-pytorch](https://github.com/metalbubble/TRN-pytorch) codebase which is based on [TSN-pytorch](https://github.com/yjxiong/tsn-pytorch). We thank Yuanjun Xiong and Bolei Zhou for releasing TSN-pytorch and TRN-pytorch repos.
