@@ -57,6 +57,11 @@ python main.py --arch resnet50 --batch-size 4 --num_segments 16 --lr 0.01 --epoc
 python main.py --arch resnet50 --batch-size 4 --num_segments 16 --lr 0.01 --epochs 120 --dropout 0.5 --weight-decay 5e-4 --warmup 10  --late_fusion_poses_attention --num_channels 3 --gsf --gsf_ch_ratio 100 --dataset FRFS --dataset_path <dataset_path> --experiment_path <experiments path> --experiment_name <experiment name>
 ```
 
+It is also possibile to train using only the skeleton information (the --arch parameter will be ignored):
+```bash
+python main_only_pose.py --arch resnet50 --batch-size 16 --num_segments 16 --lr 0.001 --epochs 250 --dropout 0.5 --weight-decay 5e-4 --warmup 10  --num_channels 3 --gsf --gsf_ch_ratio 100 --dataset FRFS --dataset_path <dataset_path> --experiment_path <experiments path> --experiment_name <experiment name>
+```
+
 ### Testing
 ```bash
 python test_models.py --arch resnet50 --num_channels 4 --num_segments 32 --early_fusion_poses --num_clips 2 --test_crops 10 --gsf --gsf_ch_ratio 100 --dataset FRFS --dataset_path <dataset_path> --weights <path to pth.tar checkpoint> -j 8
