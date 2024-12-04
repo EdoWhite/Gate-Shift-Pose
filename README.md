@@ -30,7 +30,7 @@ The FR-FS dataset is used for evaluation. It includes:
 - **417 video samples**: 276 positive (fall) and 141 negative (non-fall).
 - **Annotations**: 17 keypoints for pose estimation, RGB video frames.
 
-For dataset details, visit the [FR-FS dataset repository](https://example.com/frfs).
+For dataset details, visit the [FR-FS dataset repository](https://github.com/Shunli-Wang/TSA-Net).
 
 ## Usage
 
