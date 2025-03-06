@@ -79,8 +79,16 @@ python test_models.py --arch resnet50 --num_channels 4 --num_segments 32 --early
 | ResNet50  | Late-Fusion  | 8          | 32       | 87.02        |
 
 ## Citation
-
-Coming soon....
+```
+@InProceedings{Bianchi_2025_WACV,
+    author    = {Bianchi, Edoardo and Lanz, Oswald},
+    title     = {Gate-Shift-Pose: Enhancing Action Recognition in Sports with Skeleton Information},
+    booktitle = {Proceedings of the Winter Conference on Applications of Computer Vision (WACV) Workshops},
+    month     = {February},
+    year      = {2025},
+    pages     = {1257-1264}
+}
+```
 
 ## Acknowledgements
 Based on: [Gate-Shift-Fuse for Video Action Recognition](https://arxiv.org/pdf/2203.08897.pdf), which is built upon the [TRN-pytorch](https://github.com/metalbubble/TRN-pytorch) codebase which is based on [TSN-pytorch](https://github.com/yjxiong/tsn-pytorch). We thank Yuanjun Xiong and Bolei Zhou for releasing TSN-pytorch and TRN-pytorch repos.
