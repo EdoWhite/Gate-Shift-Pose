@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Primary Meta Tags -->
+  <!-- TODO: Replace with your paper title and author names -->
+  <meta name="title"
+    content="Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information - Edoardo Bianchi, Oswald Lanz">
+  <!-- TODO: Write a compelling 150-160 character description of your research -->
+  <meta name="description"
+    content="This paper introduces Gate-Shift-Pose, an enhanced version of Gate-Shift-Fuse networks, designed for athlete fall classification in figure skating by integrating skeleton pose data alongside RGB frames. We evaluate two fusion strategies: early-fusion, which combines RGB frames with Gaussian heatmaps of pose keypoints at the input stage, and late-fusion, which employs a multi-stream architecture with attention mechanisms to combine RGB and pose features. Experiments on the FR-FS dataset demonstrate that Gate-Shift-Pose significantly outperforms the RGB-only baseline, improving accuracy by up to 40% with ResNet18 and 20% with ResNet50. Early-fusion achieves the highest accuracy (98.08%) with ResNet50, leveraging the model's capacity for effective multimodal integration, while late-fusion is better suited for lighter backbones like ResNet18. These results highlight the potential of multimodal architectures for sports action recognition and the critical role of skeleton pose information in capturing complex motion patterns.">
+  <!-- TODO: Add 5-10 relevant keywords for your research area -->
+  <meta name="keywords" content="video understanding, action recognition">
+  <!-- TODO: List all authors -->
+  <meta name="author" content="Edoardo Bianchi, Oswald Lanz">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <!-- TODO: Replace with your institution or lab name -->
+  <meta property="og:site_name" content="Free University of Bozen-Bolzano">
+  <!-- TODO: Same as paper title above -->
+  <meta property="og:title"
+    content="Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information">
+  <!-- TODO: Same as description above -->
+  <meta property="og:description"
+    content="This paper introduces Gate-Shift-Pose, an enhanced version of Gate-Shift-Fuse networks, designed for athlete fall classification in figure skating by integrating skeleton pose data alongside RGB frames. We evaluate two fusion strategies: early-fusion, which combines RGB frames with Gaussian heatmaps of pose keypoints at the input stage, and late-fusion, which employs a multi-stream architecture with attention mechanisms to combine RGB and pose features. Experiments on the FR-FS dataset demonstrate that Gate-Shift-Pose significantly outperforms the RGB-only baseline, improving accuracy by up to 40% with ResNet18 and 20% with ResNet50. Early-fusion achieves the highest accuracy (98.08%) with ResNet50, leveraging the model's capacity for effective multimodal integration, while late-fusion is better suited for lighter backbones like ResNet18. These results highlight the potential of multimodal architectures for sports action recognition and the critical role of skeleton pose information in capturing complex motion patterns.">
+  <!-- TODO: Replace with your actual website URL -->
+  <meta property="og:url" content="https://edowhite.github.io/Gate-Shift-Pose/">
+  <!-- TODO: Create a 1200x630px preview image and update path -->
+  <meta property="og:image" content="./static/images/GSP-arch.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt"
+    content="Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information - Research Preview">
+  <meta property="article:published_time" content="2024-01-01T00:00:00.000Z">
+  <meta property="article:author" content="Edoardo Bianchi">
+  <meta property="article:section" content="Research">
+  <meta property="article:tag" content="Action Recognition">
+  <meta property="article:tag" content="Video Understanding">
+
+  <!-- Academic/Research Specific -->
+  <meta name="citation_title"
+    content="Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information">
+  <meta name="citation_author" content="Bianchi, Edoardo">
+  <meta name="citation_author" content="Lanz, Oswald">
+  <meta name="citation_publication_date" content="2025">
+  <meta name="citation_conference_title"
+    content="Winter Conference on Applications of Computer Vision (WACV) Workshops">
+  <meta name="citation_pdf_url" content=https://arxiv.org/abs/2503.04470>
+
+  <!-- Additional SEO -->
+  <meta name="theme-color" content="#2563eb">
+  <meta name="msapplication-TileColor" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://ajax.googleapis.com">
+  <link rel="preconnect" href="https://documentcloud.adobe.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+
+  <!-- TODO: Replace with your paper title and authors -->
+  <title>Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information - Edoardo Bianchi,
+    Oswald Lanz | Academic Research</title>
+
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <link rel="apple-touch-icon" href="static/images/favicon.ico">
+
+  <!-- Critical CSS - Load synchronously -->
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <!-- Non-critical CSS - Load asynchronously -->
+  <link rel="preload" href="static/css/bulma-carousel.min.css" as="style"
+    onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="static/css/bulma-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="static/css/fontawesome.all.min.css" as="style"
+    onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" as="style"
+    onload="this.onload=null;this.rel='stylesheet'">
+
+  <!-- Fallback for browsers that don't support preload -->
+  <noscript>
+    <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+    <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  </noscript>
+
+  <!-- Fonts - Optimized loading -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Defer non-critical JavaScript -->
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="static/js/bulma-carousel.min.js"></script>
+  <script defer src="static/js/bulma-slider.min.js"></script>
+  <script defer src="static/js/index.js"></script>
+
+  <!-- Structured Data for Academic Papers -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    "headline": "Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information",
+    "description": "This paper introduces Gate-Shift-Pose, an enhanced version of Gate-Shift-Fuse networks, designed for athlete fall classification in figure skating by integrating skeleton pose data alongside RGB frames. We evaluate two fusion strategies: early-fusion, which combines RGB frames with Gaussian heatmaps of pose keypoints at the input stage, and late-fusion, which employs a multi-stream architecture with attention mechanisms to combine RGB and pose features. Experiments on the FR-FS dataset demonstrate that Gate-Shift-Pose significantly outperforms the RGB-only baseline, improving accuracy by up to 40% with ResNet18 and 20% with ResNet50. Early-fusion achieves the highest accuracy (98.08%) with ResNet50, leveraging the model's capacity for effective multimodal integration, while late-fusion is better suited for lighter backbones like ResNet18. These results highlight the potential of multimodal architectures for sports action recognition and the critical role of skeleton pose information in capturing complex motion patterns.",
+    "author": [
+      {
+        "@type": "Person",
+        "name": "Edoardo Bianchi",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "Free University of Bozen-Bolzano"
+        }
+      },
+      {
+        "@type": "Person",
+        "name": "Oswald Lanz",
+        "affiliation": {
+          "@type": "Organization",
+          "name": "Free University of Bozen-Bolzano"
+        }
+      }
+    ],
+    "datePublished": "2024-01-01",
+    "publisher": {
+      "@type": "Organization",
+      "name": "2025 Winter Conference on Applications of Computer Vision (WACV) Workshops"
+    },
+    "url": "https://edowhite.github.io/Gate-Shift-Pose/",
+    "image": "https://edowhite.github.io/SkillFormer/static/images/GSP-arch.png",
+    "keywords": ["Action Recognition", "Video Understanding"],
+    "abstract": "This paper introduces Gate-Shift-Pose, an enhanced version of Gate-Shift-Fuse networks, designed for athlete fall classification in figure skating by integrating skeleton pose data alongside RGB frames. We evaluate two fusion strategies: early-fusion, which combines RGB frames with Gaussian heatmaps of pose keypoints at the input stage, and late-fusion, which employs a multi-stream architecture with attention mechanisms to combine RGB and pose features. Experiments on the FR-FS dataset demonstrate that Gate-Shift-Pose significantly outperforms the RGB-only baseline, improving accuracy by up to 40% with ResNet18 and 20% with ResNet50. Early-fusion achieves the highest accuracy (98.08%) with ResNet50, leveraging the model's capacity for effective multimodal integration, while late-fusion is better suited for lighter backbones like ResNet18. These results highlight the potential of multimodal architectures for sports action recognition and the critical role of skeleton pose information in capturing complex motion patterns.",
+    "citation": "@InProceedings{Bianchi_2025_WACV,
+    author    = {Bianchi, Edoardo and Lanz, Oswald},
+    title     = {Gate-Shift-Pose: Enhancing Action Recognition in Sports with Skeleton Information},
+    booktitle = {Proceedings of the Winter Conference on Applications of Computer Vision (WACV) Workshops},
+    month     = {February},
+    year      = {2025},
+    pages     = {1257-1264}
+}",
+    "isAccessibleForFree": true,
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "mainEntity": {
+      "@type": "WebPage",
+      "@id": "https://edowhite.github.io/Gate-Shift-Pose/"
+    },
+    "about": [
+      {
+        "@type": "Thing",
+        "name": "Computer Vision and Pattern Recognition"
+      },
+      {
+        "@type": "Thing", 
+        "name": "Action Recognition"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Website/Organization Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Free University of Bozen-Bolzano",
+    "url": "https://www.unibz.it"
+  }
+  </script>
+</head>
+
+<body>
+
+
+  <!-- Scroll to Top Button -->
+  <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <!-- More Works Dropdown -->
+  <div class="more-works-container">
+    <button class="more-works-btn" onclick="toggleMoreWorks()" title="View More Works from Our Lab">
+      <i class="fas fa-flask"></i>
+      More Works
+      <i class="fas fa-chevron-down dropdown-arrow"></i>
+    </button>
+    <div class="more-works-dropdown" id="moreWorksDropdown">
+      <div class="dropdown-header">
+        <h4>More Works from Our Lab</h4>
+        <button class="close-btn" onclick="toggleMoreWorks()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="works-list">
+        <!-- TODO: Replace with your lab's related works -->
+        <a href="https://arxiv.org/abs/2509.26278" class="work-item" target="_blank">
+          <div class="work-info">
+            <h5>ProfVLM: A Lightweight Video-Language Model for Multi-View Proficiency Estimation</h5>
+            <p>Existing approaches to skill proficiency estimation often rely on black-box video classifiers, ignoring
+              multi-view context and lacking explainability. We present ProfVLM, a compact vision-language model that
+              reformulates this task as generative reasoning: it jointly predicts skill level and generates expert-like
+              feedback from egocentric and exocentric videos. Central to our method is an AttentiveGatedProjector that
+              dynamically fuses multi-view features, projected from a frozen TimeSformer backbone into a language model
+              tuned for feedback generation. Trained on EgoExo4D with expert commentaries, ProfVLM surpasses
+              state-of-the-art methods while using up to 20x fewer parameters and reducing training time by up to 60%.
+              Our approach not only achieves superior accuracy across diverse activities, but also outputs natural
+              language critiques aligned with performance, offering transparent reasoning. These results highlight
+              generative vision-language modeling as a powerful new direction for skill assessment.</p>
+            <span class="work-venue">Submitted & under review</span>
+          </div>
+          <i class="fas fa-external-link-alt"></i>
+        </a>
+        <a href="https://arxiv.org/abs/2506.04996" class="work-item" target="_blank">
+          <div class="work-info">
+            <!-- TODO: Replace with actual paper title -->
+            <h5>PATS: Proficiency-Aware Temporal Sampling for Multi-View Sports Skill Assessment</h5>
+            <!-- TODO: Replace with brief description -->
+            <p>Automated sports skill assessment requires capturing fundamental movement patterns that distinguish
+              expert from novice performance, yet current video sampling methods disrupt the temporal continuity
+              essential for proficiency evaluation. To this end, we introduce Proficiency-Aware Temporal Sampling
+              (PATS), a novel sampling strategy that preserves complete fundamental movements within continuous temporal
+              segments for multi-view skill assessment. PATS adaptively segments videos to ensure each analyzed portion
+              contains full execution of critical performance components, repeating this process across multiple
+              segments to maximize information coverage while maintaining temporal coherence. Evaluated on the EgoExo4D
+              benchmark with SkillFormer, PATS surpasses the state-of-the-art accuracy across all viewing configurations
+              (+0.65% to +3.05%) and delivers substantial gains in challenging domains (+26.22% bouldering, +2.39%
+              music, +1.13% basketball). Systematic analysis reveals that PATS successfully adapts to diverse activity
+              characteristics-from high-frequency sampling for dynamic sports to fine-grained segmentation for
+              sequential skills-demonstrating its effectiveness as an adaptive approach to temporal sampling that
+              advances automated skill assessment for real-world applications.</p>
+            <!-- TODO: Replace with venue and year -->
+            <span class="work-venue">2025 IEEE Sport Technology and Research Workshop</span>
+          </div>
+          <i class="fas fa-external-link-alt"></i>
+        </a>
+        <!-- TODO: Add more related works or remove extra items -->
+        <a href="https://edowhite.github.io/SkillFormer/" class="work-item" target="_blank">
+          <div class="work-info">
+            <h5>SkillFormer: Unified Multi-View Video Understanding for Proficiency Estimation</h5>
+            <p>Assessing human skill levels in complex activities is a challenging problem with applications in sports,
+              rehabilitation, and training. In this work, we present SkillFormer, a parameter-efficient architecture for
+              unified multi-view proficiency estimation from egocentric and exocentric videos. Building on the
+              TimeSformer backbone, SkillFormer introduces a CrossViewFusion module that fuses view-specific features
+              using multi-head cross-attention, learnable gating, and adaptive self-calibration. We leverage Low-Rank
+              Adaptation to fine-tune only a small subset of parameters, significantly reducing training costs. In fact,
+              when evaluated on the EgoExo4D dataset, SkillFormer achieves state-of-the-art accuracy in multi-view
+              settings while demonstrating remarkable computational efficiency, using 4.5x fewer parameters and
+              requiring 3.75x fewer training epochs than prior baselines. It excels in multiple structured tasks,
+              confirming the value of multi-view integration for fine-grained skill assessment.</p>
+            <span class="work-venue">2025 International Conference on Machine Vision</span>
+          </div>
+          <i class="fas fa-external-link-alt"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container is-max-desktop">
+          <div class="columns is-centered">
+            <div class="column has-text-centered">
+              <!-- TODO: Replace with your paper title -->
+              <h1 class="title is-1 publication-title">Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports
+                with Skeleton Information</h1>
+              <div class="is-size-5 publication-authors">
+                <!-- TODO: Replace with your paper authors and their personal links -->
+                <span class="author-block">
+                  <a href="https://web.whiteapp.cloud" target="_blank">Edoardo Bianchi</a><sup></sup>,</span>
+                <span class="author-block">
+                  <a href="https://www.unibz.it/it/faculties/engineering/academic-staff/person/46208-oswald-lanz"
+                    target="_blank">Oswald Lanz</a><sup>
+                  </sup></span>
+                </span>
+              </div>
+
+              <div class="is-size-5 publication-authors">
+                <!-- TODO: Replace with your institution and conference/journal info -->
+                <span class="author-block">Free University of Bozen-Bolzano<br>Winter Conference on Applications of
+                  Computer Vision (WACV) Workshops 2025</span>
+
+              </div>
+
+              <div class="column has-text-centered">
+                <div class="publication-links">
+                  <!-- TODO: Update with your arXiv paper ID -->
+                  <span class="link-block">
+                    <a href="https://arxiv.org/pdf/2503.04470" target="_blank"
+                      class="external-link button is-normal is-rounded is-dark">
+                      <span class="icon">
+                        <i class="fas fa-file-pdf"></i>
+                      </span>
+                      <span>Paper</span>
+                    </a>
+                  </span>
+
+                  <!-- TODO: Replace with your GitHub repository URL -->
+                  <span class="link-block">
+                    <a href="https://github.com/EdoWhite/Gate-Shift-Pose" target="_blank"
+                      class="external-link button is-normal is-rounded is-dark">
+                      <span class="icon">
+                        <i class="fab fa-github"></i>
+                      </span>
+                      <span>Code</span>
+                    </a>
+                  </span>
+
+                  <!-- TODO: Update with your arXiv paper ID -->
+                  <span class="link-block">
+                    <a href="https://arxiv.org/abs/2503.04470" target="_blank"
+                      class="external-link button is-normal is-rounded is-dark">
+                      <span class="icon">
+                        <i class="ai ai-arxiv"></i>
+                      </span>
+                      <span>arXiv</span>
+                    </a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Teaser video-->
+    <section class="hero teaser">
+      <div class="container is-max-desktop">
+        <div class="hero-body">
+          <p>
+            <img src="./static/images/GSP-arch.png" alt="Gate-Shift-Pose" class="blend-img-background center-image"
+              style="max-width: 100%; height: auto;" loading="lazy">
+          </p>
+          <br>
+          <p class="has-text-justified">
+            Overview of the GSP (Gate-Shift-Pose) network architecture with two fusion strategies for integrating RGB
+            and skeletal information. Top: In the early-fusion approach, pose data is preprocessed as a Gaussian heatmap and concatenated
+            with RGB frames, forming a four-channel input for the GSF network. Bottom: In the late-fusion approach, RGB frames and skeletal data
+            are processed in separate streams using a GSF network and a Pose network, respectively. Normalized features from each stream are then
+            combined in a fusion layer, followed by multi-head attention and alignment layers to integrate relevant spatio-temporal features before
+            classification.
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- End teaser video -->
+
+
+    <!-- Paper abstract -->
+    <section class="section hero is-light">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered has-text-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3">Abstract</h2>
+            <div class="content has-text-justified">
+              <!-- TODO: Replace with your paper abstract -->
+              <p>
+                This paper introduces Gate-Shift-Pose, an enhanced version of Gate-Shift-Fuse networks, designed for
+                athlete fall classification in figure skating by integrating skeleton pose data alongside RGB frames. We
+                evaluate two fusion strategies: early-fusion, which combines RGB frames with Gaussian heatmaps of pose
+                keypoints at the input stage, and late-fusion, which employs a multi-stream architecture with attention
+                mechanisms to combine RGB and pose features. Experiments on the FR-FS dataset demonstrate that
+                Gate-Shift-Pose significantly outperforms the RGB-only baseline, improving accuracy by up to 40% with
+                ResNet18 and 20% with ResNet50. Early-fusion achieves the highest accuracy (98.08%) with ResNet50,
+                leveraging the model's capacity for effective multimodal integration, while late-fusion is better suited
+                for lighter backbones like ResNet18. These results highlight the potential of multimodal architectures
+                for sports action recognition and the critical role of skeleton pose information in capturing complex
+                motion patterns.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- End paper abstract -->
+
+
+    <section class="section hero is-small has-text-justified">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-full">
+            <div class="content">
+              <h2 class="title is-3">Early Fusion: Gaussian Heatmap for Skeleton-Based Feature Extraction</h2>
+              <p>
+                <img src="./static/images/GaussianHeatmap.png" alt="Gaussian Heatmap Example"
+                  class="blend-img-background center-image"
+                  style="max-width: 100%; height: auto; display: block; margin: 0 auto;" loading="lazy">
+              </p>
+              <p>
+                In the early-fusion approach, pose information is incorporated by augmenting each RGB frame with an
+                additional channel containing a Gaussian heatmap of pose keypoints. This results in a four-channel input
+                (RGB + pose) per frame, which is processed by a GSF network. This strategy allows the network to learn
+                correlations between pose and appearance features at an early stage, potentially capturing valuable
+                low-level interactions between modalities.
+              </p>
+
+              <p>
+                Early-fusion is computationally efficient, as both RGB and pose information are processed jointly by the
+                same feature extractor, eliminating the need for separate processing pipelines. However, by fusing the
+                modalities from the initial layers, this approach may be limited in its ability to capture higher-level
+                semantic interactions between pose and RGB features that emerge in deeper network layers.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="section hero is-small is-light has-text-justified">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-full">
+            <div class="content">
+              <h2 class="title is-3">Late Fusion: Pose Model and Alignment Layers</h2>
+              <p>
+                <img src="./static/images/customNet.png" alt="Gaussian Heatmap Example"
+                  class="blend-img-background center-image"
+                  style="max-width: 60%; height: auto; display: block; margin: 0 auto;" loading="lazy">
+              </p>
+              <p>
+                The late-fusion strategy employs a two-stream architecture with separate branches for RGB frames and
+                poses. The RGB stream processes raw visual data with a GSF network, while the pose stream uses a
+                dedicated MLP-based model that maps 34-dimensional joint coordinates (17 joints with x,y coordinates)
+                through three fully connected layers (34→64→128→128 dimensions) with ReLU activations, producing a
+                compact representation of skeletal dynamics.
+              </p>
+
+              <p>
+                Following independent feature extraction, the RGB and pose features undergo L2 normalization to ensure
+                balanced scaling between modalities. The normalized features are concatenated and processed by a
+                multi-head attention layer, which dynamically emphasizes contextually relevant features across both
+                streams. This attention mechanism enhances the model's sensitivity to critical aspects of each modality
+                within the fused representation.
+              </p>
+
+              <p>
+                The attention-enhanced output is refined through a feature refinement module consisting of two
+                sequential linear layers that progressively reduce dimensionality (halving at each stage), with batch
+                normalization, ReLU activation, and dropout applied between layers. This structure provides
+                regularization, compressing the fused features and mitigating noise to produce a more robust and
+                discriminative feature set for final classification.
+              </p>
+
+              <p>
+                The late-fusion approach enables effective leverage of complementary RGB and pose information, enhancing
+                the model's ability to distinguish complex movements. Although this architecture introduces additional
+                computational overhead compared to early-fusion, it facilitates contextually aware interactions between
+                modalities, which is particularly advantageous for recognizing complex and dynamic actions in sports
+                like figure skating.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section class="section hero is-small has-text-justified">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-full">
+            <div class="content">
+              <h2 class="title is-3">Experimental Results</h2>
+              <p>
+                <img src="./static/images/TableComparisonGSP.png" alt="Comparison with State-of-the-Art"
+                  class="blend-img-background center-image"
+                  style="max-width: 100%; height: auto; display: block; margin: 0 auto;" loading="lazy">
+              </p>
+              <p>
+                Gate-Shift-Pose achieves its highest accuracy (98.08%) with early-fusion on ResNet50 using a batch size
+                of 4 and 32 segments, demonstrating that integrating RGB and pose data at the input stage is highly
+                effective for models with greater capacity. For the lighter ResNet18 backbone, the best result (95.19%)
+                was achieved with late-fusion using the same batch size and segment count, showing that maintaining
+                separate RGB and pose streams until later stages is advantageous for smaller architectures.
+              </p>
+
+              <p>
+                The integration of pose data consistently outperformed the original RGB-only GSF baseline across all
+                configurations. Specifically, the inclusion of skeleton-based features improved accuracy from 67.79% to
+                95.19% with ResNet18 (approximately 40% increase) and from 81.73% to 98.08% with ResNet50 (approximately
+                20% increase). These results confirm the effectiveness of pose information in capturing complex motion
+                patterns essential for figure skating action recognition.
+              </p>
+
+              <p>
+                Experimental parameters also played a significant role: a batch size of 4 resulted in improved
+                performance due to its stabilizing effect on training with relatively small datasets, while a higher
+                segment count (32) consistently led to better results across both backbones by providing richer temporal
+                context for modeling dynamic motion patterns. In summary, early-fusion is well-suited for larger
+                backbones enabling effective multimodal integration, whereas late-fusion better supports smaller
+                backbones by reducing computational complexity while maintaining strong performance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!--BibTex citation -->
+    <section class="section" id="BibTeX">
+      <div class="container is-max-desktop content">
+        <div class="bibtex-header">
+          <h2 class="title">BibTeX</h2>
+          <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard">
+            <i class="fas fa-copy"></i>
+            <span class="copy-text">Copy</span>
+          </button>
+        </div>
+        <pre id="bibtex-code"><code>@InProceedings{Bianchi_2025_WACV,
+    author    = {Bianchi, Edoardo and Lanz, Oswald},
+    title     = {Gate-Shift-Pose: Enhancing Action Recognition in Sports with Skeleton Information},
+    booktitle = {Proceedings of the Winter Conference on Applications of Computer Vision (WACV) Workshops},
+    month     = {February},
+    year      = {2025},
+    pages     = {1257-1264}
+}
+</code></pre>
+      </div>
+    </section>
+    <!--End BibTex citation -->
+
+
+    <footer class="footer">
+      <div class="container">
+        <div class="columns is-centered">
+          <div class="column is-8">
+            <div class="content">
+
+              <p>
+                This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template"
+                  target="_blank">Academic Project Page Template</a> which was adopted from the <a
+                  href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+                You are free to borrow the source code of this website, we just ask that you link back to this page in
+                the footer. <br> This website is licensed under a <a rel="license"
+                  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+                  Commons Attribution-ShareAlike 4.0 International License</a>.
+              </p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Statcounter tracking code -->
+
+    <!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
+
+    <!-- End of Statcounter Code -->
+
+</body>
+
+</html>
