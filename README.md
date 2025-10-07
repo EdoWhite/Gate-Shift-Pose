@@ -1,9 +1,15 @@
 
 # Gate-Shift-Pose (GSP): Enhancing Action Recognition in Sports with Skeleton Information
 
-![GSP Architecture](./img/GSF-Pose.png)
+This repository contains the implementation of **Gate-Shift-Pose (GSP)**, a multimodal architecture designed to enhance action recognition in sports by integrating skeleton-based pose information with RGB frames. The model builds on the **Gate-Shift-Fuse (GSF)** network and introduces early- and late-fusion strategies for improved fall classification in figure skating.
 
-This repository contains the implementation of **Gate-Shift-Pose (GSP)**, a multimodal architecture designed to enhance action recognition in sports by integrating skeleton-based pose information with RGB frames. The model builds on the **Gate-Shift-Fuse (GSF)** network and introduces early- and late-fusion strategies for improved fall classification in figure skating. Visit the [project page](https://edowhite.github.io/Gate-Shift-Pose).
+**Paper accepted at:** 2025 IEEE/CVF Winter Conference on Applications of Computer Vision Workshops (WACVW)
+
+<p align="center">
+📄 <a href="https://arxiv.org/abs/2503.04470">Read the Paper</a> | 🌐 <a href="https://edowhite.github.io/Gate-Shift-Pose">Project Page</a>
+</p>
+
+![GSP Architecture](./img/GSF-Pose.png)
 
 ## Overview
 
